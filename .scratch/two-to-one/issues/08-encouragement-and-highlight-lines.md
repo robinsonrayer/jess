@@ -4,11 +4,11 @@
 
 **Blocked by:** 02 (Meal logging), 03 (Study logging)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Feed renders full, day-tagged, most-recent-first lines from every action
-- [ ] Feed lines are neutral: they witness the act, never judge the person (ADR-0003)
-- [ ] Sending explicit encouragement to the other partner is one tap and lands on the shared feed
-- [ ] Jess can opt a meal note into a highlight line visible to Robi
-- [ ] Robi can opt a problem or label into a highlight line visible to Jess
-- [ ] Nothing private appears on the shared surface without an explicit highlight-line opt-in (ADR-0007)
+- [x] Feed renders full, day-tagged, most-recent-first lines from every action
+- [x] Feed lines are neutral: they witness the act, never judge the person (ADR-0003)
+- [x] Sending explicit encouragement to the other partner is one tap and lands on the shared feed
+- [x] Jess can opt a meal note into a highlight line visible to Robi
+- [x] Robi can opt a problem or label into a highlight line visible to Jess
+- [x] Nothing private appears on the shared surface without an explicit highlight-line opt-in (ADR-0007)

@@ -4,12 +4,12 @@
 
 **Blocked by:** 02 (Meal logging)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Shared pool shows the sum of both profiles' points (the prototype's `totalPoints`)
-- [ ] Catalog ships seeded with Marriage at 1,000,000 points (ADR-0008)
-- [ ] Reward can be added with a name and a point cost; add posts a feed line
-- [ ] Reward can be renamed at any time
-- [ ] Reward can be deleted; delete posts a feed line
-- [ ] Each reward renders a progress bar and the percentage toward its cost from the shared pool
-- [ ] A reward whose cost the pool has reached reads as "reached", with no claiming or purchase flow
+- [x] Shared pool shows the sum of both profiles' points (the prototype's `totalPoints`)
+- [x] Catalog ships seeded with Marriage at 1,000,000 points (ADR-0008)
+- [x] Reward can be added with a name and a point cost; add posts a feed line
+- [x] Reward can be renamed at any time
+- [x] Reward can be deleted; delete posts a feed line
+- [x] Each reward renders a progress bar and the percentage toward its cost from the shared pool
+- [x] A reward whose cost the pool has reached reads as "reached", with no claiming or purchase flow

@@ -4,12 +4,12 @@
 
 **Blocked by:** 02 (Meal logging), 03 (Study logging), 04 (Prayer and examen)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A skipped day with a freeze banked preserves the streak count and burns one freeze
-- [ ] A skipped day with an empty bank restarts the streak at 1
-- [ ] Banking the 7th, 14th, and 30th consecutive day adds a freeze when bank is under 2 (max 2 in reserve)
-- [ ] Milestone bonuses of 25/35/50 points credit on the milestone day
-- [ ] Prayer milestone bonus credits both profiles; health and study credit the acting profile
-- [ ] Banked freezes and their burn are visible in the streak table
-- [ ] The engine rules here match the milestone table and freeze gap logic verified in the prototype
+- [x] A skipped day with a freeze banked preserves the streak count and burns one freeze
+- [x] A skipped day with an empty bank restarts the streak at 1
+- [x] Banking the 7th, 14th, and 30th consecutive day adds a freeze when bank is under 2 (max 2 in reserve)
+- [x] Milestone bonuses of 25/35/50 points credit on the milestone day
+- [x] Prayer milestone bonus credits both profiles; health and study credit the acting profile
+- [x] Banked freezes and their burn are visible in the streak table
+- [x] The engine rules here match the milestone table and freeze gap logic verified in the prototype

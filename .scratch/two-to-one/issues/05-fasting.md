@@ -4,10 +4,10 @@
 
 **Blocked by:** 01 (App skeleton and persistence)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Binding fast days can be flagged as such (default days per ADR-0005: all Fridays, Ash Wednesday, Good Friday)
-- [ ] Flag surfaces gently with no list of "blackout" days
-- [ ] "Kept the fast" earns a flat 20 points, once per person per day
-- [ ] A kept fast posts a neutral feed line (ADR-0005)
-- [ ] Keeping the fast on a non-binding day is a dead button, not a punishment
+- [x] Binding fast days can be flagged as such (default days per ADR-0005: all Fridays, Ash Wednesday, Good Friday)
+- [x] Flag surfaces gently with no list of "blackout" days
+- [x] "Kept the fast" earns a flat 20 points, once per person per day
+- [x] A kept fast posts a neutral feed line (ADR-0005)
+- [x] Keeping the fast on a non-binding day is a dead button, not a punishment

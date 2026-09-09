@@ -4,13 +4,13 @@
 
 **Blocked by:** 01 (App skeleton and persistence)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Photo entry (capture or upload) plus one-tap Good/Okay/Miss rating render for Jess
-- [ ] The rubric line renders constant under the rating control with no checklist or macros (ADR-0006)
-- [ ] Optional private note field on a meal; it never renders in Robi's view unless shared as a highlight line
-- [ ] Any meal logged advances the health streak once per day, never more than once per day
-- [ ] A Miss earns base points and counts toward the streak (ADR-0003)
-- [ ] Good earns a larger total than Okay, which earns more than Miss
-- [ ] Base points fall in the 8-15 band with a 10% doubling chance; the delta is visible in the feed line
-- [ ] Robi's cross view shows Jess's meal photo and rating by default (ADR-0007)
+- [x] Photo entry (capture or upload) plus one-tap Good/Okay/Miss rating render for Jess
+- [x] The rubric line renders constant under the rating control with no checklist or macros (ADR-0006)
+- [x] Optional private note field on a meal; it never renders in Robi's view unless shared as a highlight line
+- [x] Any meal logged advances the health streak once per day, never more than once per day
+- [x] A Miss earns base points and counts toward the streak (ADR-0003)
+- [x] Good earns a larger total than Okay, which earns more than Miss
+- [x] Base points fall in the 8-15 band with a 10% doubling chance; the delta is visible in the feed line
+- [x] Robi's cross view shows Jess's meal photo and rating by default (ADR-0007)

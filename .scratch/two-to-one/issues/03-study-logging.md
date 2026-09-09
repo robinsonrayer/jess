@@ -4,11 +4,11 @@
 
 **Blocked by:** 01 (App skeleton and persistence)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] One-tap pomodoro logging advances the study streak once per day
-- [ ] Problem logging captures a difficulty of Easy, Medium, or Hard and awards a higher bonus for harder problems
-- [ ] The difficulty mix bar (E/M/H counts) renders in the shared view
-- [ ] Task labels and problem names never appear in the shared surface (ADR-0007)
-- [ ] Feed line for a study action is neutral ("Robi finished a Hard problem"), never judgment-bearing
-- [ ] Highlight line opt-in surfaces a chosen private detail to Jess; nothing private leaks without it
+- [x] One-tap pomodoro logging advances the study streak once per day
+- [x] Problem logging captures a difficulty of Easy, Medium, or Hard and awards a higher bonus for harder problems
+- [x] The difficulty mix bar (E/M/H counts) renders in the shared view
+- [x] Task labels and problem names never appear in the shared surface (ADR-0007)
+- [x] Feed line for a study action is neutral ("Robi finished a Hard problem"), never judgment-bearing
+- [x] Highlight line opt-in surfaces a chosen private detail to Jess; nothing private leaks without it
