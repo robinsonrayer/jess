@@ -53,6 +53,42 @@ test("fresh() state totals zero", () => {
   assert.equal(createEngine().totalPoints(createEngine().fresh()), 0);
 });
 
+test("normalize() backfills new fields onto a legacy state shape", () => {
+  const e = createEngine();
+  const legacy = { day: 3, fasting: false,
+    profiles: {
+      jess: { points: 7, meal: 2 },
+      robi: { points: 9, study: 1 }
+    },
+    streaks: { health: { count: 2, last: 2 } },
+    rewards: [], feed: [] };
+  const s = e.normalize(legacy);
+  for (const k of ["jess", "robi"]) {
+    assert.equal(s.profiles[k].difficultyMix.length, 3);
+    assert.equal(s.profiles[k].mealRating, null);
+    assert.equal(s.profiles[k].mealNote, null);
+    assert.equal(s.profiles[k].mealPhoto, null);
+    assert.equal(s.profiles[k].studyLabel, null);
+    assert.equal(s.profiles[k].prayer, null);
+    assert.equal(s.profiles[k].fast, null);
+    assert.equal(s.profiles[k].encouraged, null);
+    assert.equal(s.profiles[k].highlighted, null);
+  }
+  assert.equal(s.profiles.jess.points, 7);
+  assert.equal(s.profiles.jess.meal, 2);
+  assert.equal(s.profiles.robi.study, 1);
+  assert.deepEqual(s.streaks.study, { count:0, bank:0, last:null });
+  assert.equal(s.streaks.health.last, 2);
+  assert.deepEqual(s.rewards, []);
+});
+
+test("normalize() tolerates a null or malformed state", () => {
+  const e = createEngine();
+  assert.equal(e.normalize(null).day, 1);
+  const s = e.normalize({});
+  assert.ok(s.profiles && s.rewards && s.streaks);
+});
+
 test("storage round-trips the full state", () => {
   const store = memoryStorage();
   const s = createEngine().fresh();

@@ -73,9 +73,29 @@ export function createEngine(){
 
   function totalPoints(s){ return s.profiles.jess.points + s.profiles.robi.points; }
 
+  function normalize(s){
+    if (!s || !s.profiles) { return fresh(); }
+    var f = fresh();
+    ["jess", "robi"].forEach(function(k){
+      var p = s.profiles[k] || {};
+      s.profiles[k] = {
+        ...f.profiles[k],
+        ...p,
+        difficultyMix: (p.difficultyMix && p.difficultyMix.length === 3) ? p.difficultyMix : [0,0,0]
+      };
+    });
+    ["health", "study", "prayer"].forEach(function(k){
+      s.streaks[k] = { ...f.streaks[k], ...(s.streaks && s.streaks[k]) };
+    });
+    if (!s.rewards) { s.rewards = f.rewards; }
+    if (!s.feed) { s.feed = []; }
+    return s;
+  }
+
   return {
     setSeed: function(n){ seed = n; },
     fresh: fresh,
+    normalize: normalize,
     totalPoints: totalPoints,
 
     advanceDay: function(s){

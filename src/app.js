@@ -32,7 +32,7 @@ function persist(){
 }
 
 function adoptCloudState(cloud){
-  state = cloud;
+  state = engine.normalize(cloud);
   syncFastingFlag();
   render();
 }
@@ -284,7 +284,7 @@ function choose(profile){
   actor = profile;
   storage.setItem(SESSION_KEY, actor);
   if (first) {
-    state = loadState(storage) || engine.fresh();
+    state = engine.normalize(loadState(storage));
     first = false;
   }
   syncFastingFlag();
