@@ -71,6 +71,10 @@
         </div>
       </div>
 
+      <div id="log-zone"></div>
+
+      <div id="cross-zone"></div>
+
       <div class="streaks">
         <div class="streak-card health">
           <span class="streak-label">Health</span>
@@ -102,6 +106,10 @@
     <section id="view-feed" class="view">
       <h2>Encouragement</h2>
       <p class="lede">Witnessed, never judged.</p>
+      <div class="feed-acts">
+        <button id="encourage-btn" class="act-btn">Send encouragement</button>
+        <button id="highlight-btn" class="act-btn ghost-act">Share a highlight</button>
+      </div>
       <div id="feed"></div>
     </section>
 
@@ -110,6 +118,11 @@
       <p class="lede">Every point from either domain feeds this.</p>
       <div class="pool-total"><b id="bof-total">0</b><span>points banked</span></div>
       <div id="rewards"></div>
+      <form id="reward-form">
+        <input type="text" id="reward-name" placeholder="a dream to add" autocomplete="off">
+        <input type="number" id="reward-cost" placeholder="point cost" min="1" inputmode="numeric">
+        <button type="submit">Add</button>
+      </form>
     </section>
   </main>
 
@@ -127,6 +140,19 @@
       Our Future
     </button>
   </nav>
+</div>
+
+<div id="examen-modal" class="modal">
+  <div class="modal-card">
+    <p class="modal-kicker">Examen</p>
+    <h3 id="examen-title"></h3>
+    <p id="examen-body"></p>
+    <input type="text" id="examen-note" placeholder="one line of gratitude" autocomplete="off">
+    <div class="modal-actions">
+      <button id="examen-back" class="ghost">back</button>
+      <button id="examen-next" class="act-btn">next</button>
+    </div>
+  </div>
 </div>
 
 <script type="module" src="src/app.js"></script>

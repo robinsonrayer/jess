@@ -5,14 +5,19 @@ export function createEngine(){
   function doubling(){ return rnd() < 0.10; }
 
   var MILESTONES = { 7:25, 14:35, 30:50 };
+  function name(actor){ return actor === "jess" ? "Jess" : "Robi"; }
 
   function fresh(){
     return {
       day: 1,
       fasting: false,
       profiles: {
-        jess: { points:0, meal:null, study:0, prayer:null, fast:null, difficultyMix:[0,0,0] },
-        robi: { points:0, meal:null, study:0, prayer:null, fast:null, difficultyMix:[0,0,0] }
+        jess: { points:0, meal:null, mealRating:null, mealNote:null, mealPhoto:null,
+                study:0, studyLabel:null, prayer:null, fast:null,
+                encouraged:null, highlighted:null, difficultyMix:[0,0,0] },
+        robi: { points:0, meal:null, mealRating:null, mealNote:null, mealPhoto:null,
+                study:0, studyLabel:null, prayer:null, fast:null,
+                encouraged:null, highlighted:null, difficultyMix:[0,0,0] }
       },
       streaks: {
         health: { count:0, bank:0, last:null },
@@ -78,7 +83,7 @@ export function createEngine(){
     },
     setFasting: function(s, on){ return { ...s, fasting: on }; },
 
-    logMeal: function(s, actor, rating){
+    logMeal: function(s, actor, rating, note, photo){
       s = clone(s);
       var p = s.profiles[actor];
       var extra = rating === "Good" ? 5 : rating === "Okay" ? 2 : 0;
@@ -88,8 +93,11 @@ export function createEngine(){
       if (dbl) total *= 2;
       p.points += total;
       p.meal = s.day;
+      p.mealRating = rating;
+      if (note !== undefined) p.mealNote = note;
+      if (photo !== undefined) p.mealPhoto = photo;
       var bs = bumpStreak(s, "health", s.day);
-      var msg = actor + " logged a meal — " + rating + ", +" + total + " pts" + (dbl ? " (doubled)" : "");
+      var msg = name(actor) + " logged a meal — " + rating + ", +" + total + " pts" + (dbl ? " (doubled)" : "");
       if (bs.note === "milestone") {
         p.points += bs.points;
         msg += " · 🎈 health streak " + bs.points + " pts" + (bs.freezeGained ? " · +1 freeze" : "");
@@ -98,7 +106,7 @@ export function createEngine(){
       return s;
     },
 
-    studyAction: function(s, actor, type, difficulty){
+    studyAction: function(s, actor, type, difficulty, label){
       s = clone(s);
       var p = s.profiles[actor];
       var extra = type === "problem" ? (difficulty === "Easy" ? 3 : difficulty === "Medium" ? 5 : 8) : 0;
@@ -107,9 +115,13 @@ export function createEngine(){
       if (dbl) total *= 2;
       p.points += total;
       p.study = s.day;
-      if (type === "problem") p.difficultyMix[difficulty === "Easy" ? 0 : difficulty === "Medium" ? 1 : 2]++;
+      if (type === "problem") {
+        p.difficultyMix[difficulty === "Easy" ? 0 : difficulty === "Medium" ? 1 : 2]++;
+      }
+      if (label !== undefined) p.studyLabel = label;
       var bs = bumpStreak(s, "study", s.day);
-      var msg = actor + " finished a " + (type === "problem" ? difficulty + " problem" : "pomodoro") + " · +" + total + " pts" + (dbl ? " (doubled)" : "");
+      var what = type === "problem" ? difficulty + " problem" : "pomodoro";
+      var msg = name(actor) + " finished a " + what + " · +" + total + " pts" + (dbl ? " (doubled)" : "");
       if (bs.note === "milestone") {
         p.points += bs.points;
         msg += " · 🎈 study streak " + bs.points + " pts" + (bs.freezeGained ? " · +1 freeze" : "");
@@ -123,11 +135,11 @@ export function createEngine(){
       var p = s.profiles[actor];
       p.prayer = s.day;
       var bs = bumpStreak(s, "prayer", s.day);
-      var msg = actor + " " + (via === "examen" ? "did the examen" : "logged prayer");
+      var msg = name(actor) + " " + (via === "examen" ? "did the examen" : "logged prayer");
       if (bs.note === "milestone") {
         s.profiles.jess.points += bs.points;
         s.profiles.robi.points += bs.points;
-        msg += " · 🎈 prayer streak " + bs.points + " pts to each";
+        msg += " · 🎈 prayer streak " + bs.points + " pts to each" + (bs.freezeGained ? " · +1 freeze" : "");
       }
       feed(s, msg + ".");
 
@@ -150,7 +162,28 @@ export function createEngine(){
       if (p.fast === s.day) { return s; }
       p.fast = s.day;
       p.points += 20;
-      feed(s, actor + " kept the fast · +20 pts.");
+      feed(s, name(actor) + " kept the fast · +20 pts.");
+      return s;
+    },
+
+    encourage: function(s, actor){
+      s = clone(s);
+      var p = s.profiles[actor];
+      if (p.encouraged === s.day) { return s; }
+      p.encouraged = s.day;
+      var other = actor === "jess" ? "Robi" : "Jess";
+      feed(s, name(actor) + " sent " + other + " encouragement.");
+      return s;
+    },
+
+    highlight: function(s, actor){
+      s = clone(s);
+      var p = s.profiles[actor];
+      var detail = actor === "jess" ? p.mealNote : p.studyLabel;
+      if (!detail) { return s; }
+      if (p.highlighted === s.day) { return s; }
+      p.highlighted = s.day;
+      feed(s, name(actor) + " shared a highlight: " + detail);
       return s;
     },
 
@@ -159,6 +192,16 @@ export function createEngine(){
       var id = "r" + Date.now();
       s.rewards = s.rewards.concat([{ id:id, name:name, cost:cost }]);
       feed(s, "Reward added to the catalog: " + name + " at " + cost + " pts.");
+      return s;
+    },
+
+    renameReward: function(s, id, name){
+      s = clone(s);
+      var r = s.rewards.filter(function(x){ return x.id === id; })[0];
+      if (r) {
+        r.name = name;
+        feed(s, "Reward renamed to: " + name + ".");
+      }
       return s;
     },
 
