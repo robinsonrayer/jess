@@ -1,0 +1,3 @@
+# Couple-defined reward catalog seeded with Marriage
+
+The Build Our Future pool does not unlock a fixed ladder of rewards. It backs a catalog the couple can edit any time: add a reward, set its point cost, rename it, delete it. The catalog ships seeded with one default, Marriage at 1,000,000 points, as a far target that both of them can reach only by showing up together for years. Smaller rewards (a movie night, a hill-station weekend) get added on the go. The accumulator is the couple's own goal line; the unlock is a milestone to celebrate, not a purchase. Rejected: a fixed built-in reward list, which would make the couple shop against strangers' tastes in a moment they are supposed to define their own life together.

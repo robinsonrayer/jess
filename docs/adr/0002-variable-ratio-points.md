@@ -1,0 +1,3 @@
+# Variable-ratio point rewards
+
+The point engine is deliberately non-deterministic: actions earn base points randomized in a band (8-15), a 10% chance of double, and a rarity of large surprises kept for later. Fixed, predictable points were rejected because operant conditioning research shows variable-ratio schedules sustain responding far longer than fixed ones (the slot-machine effect Duolingo uses). The randomness is a feature, not a bug; anyone who "cleans up" the point logic to a fixed value would remove the engagement engine.

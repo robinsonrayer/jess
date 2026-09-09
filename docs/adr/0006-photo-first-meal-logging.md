@@ -1,0 +1,3 @@
+# Photo-first meal logging with no macro counting
+
+Jess logs meals as a photo plus a one-tap Good/Okay/Miss rating, with one constant rubric line ("meat and fruit first, light on sweets and packaged stuff") and no calories, macros, or food database. Full macro tracking was rejected despite being the industry default: it is the top reason food apps die (two-minute entries collapse by day three), and her living situation makes exact macros unknowable for family meals. The bet is that a 5-second log sustains the streak, and the streak plus points does the motivating. Macros and weight trends are documented v1.5 candidates only if she asks for them.

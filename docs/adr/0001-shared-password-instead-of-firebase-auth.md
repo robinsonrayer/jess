@@ -1,0 +1,3 @@
+# Shared password instead of Firebase Auth
+
+The app has two fixed profiles (Jess, Robi) and no signup, so it uses a shared in-app password checked against a value the browser can read, with Firebase anonymous auth underneath so strangers cannot query the datastore. Real per-user Firebase Auth was rejected: it adds signup flows, invite codes, and password resets for zero value between two people who trust each other. This means the password is a courtesy door, not security, and all data lives in one shared space keyed by profile. Acceptable because the data is low-sensitivity (meal ratings, pomodoros, prayer flags) and migration to real auth later is a documented possibility if the app ever leaves the two of them.

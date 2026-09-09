@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two to One — reward engine demo</title>
+<style>
+  :root { --ink:#1f2430; --mut:#6b7280; --acc:#4f46e5; --line:#e5e7eb; --good:#16a34a; --ok:#ca8a04; --miss:#dc2626; --pray:#7c3aed; }
+  * { box-sizing:border-box; }
+  body { font-family:system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--ink); background:#f7f7f9; margin:0; padding:0 0 40px; }
+  header { padding:22px 20px 14px; max-width:760px; margin:0 auto; border-bottom:1px solid var(--line); }
+  header h1 { margin:0 0 6px; font-size:22px; }
+  header p { margin:0; color:var(--mut); font-size:14px; line-height:1.5; }
+  main { max-width:760px; margin:0 auto; padding:16px 20px; }
+  section { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  section h2 { margin:0 0 10px; font-size:15px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  button { font:inherit; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:9px; padding:9px 12px; cursor:pointer; }
+  button:hover { background:#f3f4f6; }
+  button.primary { background:var(--acc); border-color:var(--acc); color:#fff; }
+  button.small { padding:5px 9px; font-size:13px; }
+  .actor.active { background:var(--acc-bg); border-color:var(--acc); font-weight:600; }
+  .tag { display:inline-block; font-size:12px; font-weight:600; padding:3px 8px; border-radius:999px; }
+  .tag.jess { background:#fce7f3; color:#9d174d; }
+  .tag.robi { background:#dbeafe; color:#1e40af; }
+  .good{color:var(--good)} .ok{color:var(--ok)} .miss{color:var(--miss)} .pray{color:var(--pray)} .mut{color:var(--mut)}
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--mut); font-weight:500; font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+  .bar { height:10px; background:#eef2ff; border-radius:999px; overflow:hidden; margin-top:6px; }
+  .bar > div { height:100%; background:var(--acc); }
+  .feedline { padding:6px 0; border-bottom:1px dashed var(--line); font-size:14px; }
+  .feedline:last-child { border-bottom:none; }
+  .changed { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px 12px; font-size:14px; color:#14532d; margin-bottom:14px; }
+  .wts { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:12px; }
+  .wt-tab { font-size:13px; padding:6px 10px; border-radius:8px 8px 0 0; border:1px solid var(--line); border-bottom:none; background:none; cursor:pointer; }
+  .wt-tab.active { background:#fff; font-weight:600; border-top:2px solid var(--acc); }
+  .wt-body { border:1px solid var(--line); border-radius:0 10px 10px 10px; background:#fff; padding:14px; margin-bottom:16px; }
+  .steps { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .wt-step { text-align:left; padding:10px 12px; border:1px solid var(--line); border-radius:9px; display:flex; flex-direction:column; gap:4px; }
+  .wt-step.done { opacity:.55; }
+  .wt-step .hint { font-size:12px; color:var(--mut); }
+  .wt-note { font-size:13px; color:var(--mut); line-height:1.5; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Two to One — reward engine demo</h1>
+  <p>This demo simulates the points, streaks, freezes, and Build Our Future pool for you and Jess. Press buttons as either person, day by day, and watch everything react. Nothing is saved; this is a model to poke holes in. Each qualifying action rolls 8–15 base points with a 10% chance of doubling. The scripted scenes below play the tricky cases on purpose.</p>
+</header>
+
+<main>
+  <div id="changed" class="changed" style="display:none"></div>
+
+  <section>
+    <h2>Who is acting?</h2>
+    <div class="row">
+      <button id="pick-jess" class="actor tag jess">Jess</button>
+      <button id="pick-robi" class="actor tag robi">Robi</button>
+      <span class="mut" style="align-self:center;font-size:13px">Actions below are taken by the highlighted person.</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>What happened today <span id="day-label" class="mut" style="font-size:13px"></span></h2>
+    <div class="row" style="margin-bottom:12px">
+      <button id="next-day" class="primary small">It's the next morning</button>
+      <button id="toggle-fast" class="small">Today is not a fasting day</button>
+    </div>
+    <table>
+      <tr><th></th><th>Jess</th><th>Robi</th></tr>
+      <tr><td>Points this profile</td><td id="pts-jess"></td><td id="pts-robi"></td></tr>
+      <tr><td>Meal logged today</td><td id="meal-jess"></td><td id="meal-robi"></td></tr>
+      <tr><td>Study done today</td><td id="study-jess"></td><td id="study-robi"></td></tr>
+      <tr><td>Prayed today</td><td id="pray-jess"></td><td id="pray-robi"></td></tr>
+      <tr><td>Difficulty mix (E/M/H)</td><td colspan="2" id="diff-mix"></td></tr>
+      <tr><td>Is today a fasting day?</td><td colspan="2" id="fast-day"></td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Actions for <span id="action-actor">Jess</span></h2>
+    <div class="row">
+      <button id="act-meal-good" class="good">Meal → Good</button>
+      <button id="act-meal-ok" class="ok">Meal → Okay</button>
+      <button id="act-meal-miss" class="miss">Meal → Miss</button>
+      <button id="act-pomodoro">Pomodoro</button>
+      <button id="act-problem-e">Problem Easy</button>
+      <button id="act-problem-m">Problem Medium</button>
+      <button id="act-problem-h">Problem Hard</button>
+      <button id="act-pray" class="pray">Prayed today</button>
+      <button id="act-examen" class="pray">Did the examen</button>
+      <button id="act-fast">Kept the fast</button>
+    </div>
+    <p class="mut" style="font-size:13px;margin:10px 0 0">Meals are Jess's, study is Robi's, prayer and fasting are shared. Pressing the "wrong" person's button is allowed here on purpose to see the rules struggle. The examen counts as praying and earns no points. Kept the fast only does anything on a fasting day.</p>
+  </section>
+
+  <section>
+    <h2>Streaks and freezes</h2>
+    <table>
+      <tr><th>Streak</th><th>Days</th><th>Freezes banked</th><th>Last active on day</th></tr>
+      <tr><td class="good">Health (any meal)</td><td id="s-health"></td><td id="s-health-b"></td><td id="s-health-l"></td></tr>
+      <tr><td class="ok">Study (any focus)</td><td id="s-study"></td><td id="s-study-b"></td><td id="s-study-l"></td></tr>
+      <tr><td class="pray">Shared prayer</td><td id="s-pray"></td><td id="s-pray-b"></td><td id="s-pray-l"></td></tr>
+    </table>
+    <p class="mut" style="font-size:13px;margin:10px 0 0">A streak advances once per day on any qualifying action. A missed day burns a freeze if one is banked. No freeze, the streak restarts. Every 7th day in a row banks a freeze (max 2) and pays the milestone bonus.</p>
+  </section>
+
+  <section>
+    <h2>Build Our Future</h2>
+    <div id="bof-total" style="font-size:20px;font-weight:700"></div>
+    <div class="bar"><div id="bof-bar" style="width:0%"></div></div>
+    <div id="rewards" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:10px">
+      <input id="reward-name" placeholder="a treat to dream about" style="flex:2;min-width:140px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font:inherit">
+      <input id="reward-cost" type="number" min="100" step="100" placeholder="points" style="flex:1;min-width:90px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font:inherit">
+      <button id="reward-add" class="primary small">Add reward</button>
+    </div>
+    <p class="mut" style="font-size:13px;margin:8px 0 0">Every point feeds this pool. The reward catalog is yours: add movie nights, hill-station weekends, Marriage is already there as the far target. Edit it whenever you want; nothing is locked.</p>
+  </section>
+
+  <section>
+    <h2>Encouragement feed</h2>
+    <div id="feed"></div>
+  </section>
+
+  <section>
+    <h2>Scripted scenes (reset and play)</h2>
+    <div class="wts" id="wts"></div>
+    <div class="wt-body" id="wt-body"></div>
+  </section>
+</main>
+
+<script>
+/* ============================================================
+   The reward engine. A pure module: no DOM, no page state, no
+   storage. Lifts straight into the app's state layer.
+   ============================================================ */
+function createEngine(){
+  var seed = 20260909;
+  function rnd(){ seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+  function roll(){ return 8 + Math.floor(rnd() * 8); }
+  function doubling(){ return rnd() < 0.10; }
+
+  // streak count -> bonus points. Bonus at 30.
+  var MILESTONES = { 7:25, 14:35, 30:50 };
+
+  function fresh(){
+    return {
+      day: 1,
+      fasting: false,
+      profiles: {
+        jess: { points:0, meal:null, study:0, prayer:null, fast:null, pm:[0,0,0] },
+        robi: { points:0, meal:null, study:0, prayer:null, fast:null, pm:[0,0,0] }
+      },
+      streaks: {
+        health: { count:0, bank:0, last:null },
+        study:  { count:0, bank:0, last:null },
+        prayer: { count:0, bank:0, last:null }
+      },
+      rewards: [
+        { id:"marriage", name:"Marriage", cost:1000000 }
+      ],
+      feed: []
+    };
+  }
+
+  function feed(s, text){ s.feed.push("Day " + s.day + " — " + text); }
+
+  function bumpStreak(s, streakId, day){
+    var st = s.streaks[streakId];
+    if (st.last === day) { return { note:null }; }
+    var newCount = st.count + 1;
+    var isNormal = st.last === null || st.last === day - 1;
+    if (!isNormal) {
+      var gap = day - st.last - 1;
+      if (st.bank >= gap) { st.bank -= gap; st.last = day; return { note:"freeze" }; }
+      if (st.bank > 0) { st.bank = 0; }
+      newCount = 1;
+    }
+    st.count = newCount;
+    st.last = day;
+    if (isNormal && MILESTONES[st.count] !== undefined) {
+      var fz = st.bank < 2 ? 1 : 0;
+      st.bank = Math.min(2, st.bank + fz);
+      return { note:"milestone", points:MILESTONES[st.count], freezeGained:fz === 1 };
+    }
+    return { note:null };
+  }
+
+  function totalPoints(s){ return s.profiles.jess.points + s.profiles.robi.points; }
+
+  return {
+    setSeed: function(n){ seed = n; },
+    fresh: fresh,
+    totalPoints: totalPoints,
+
+    advanceDay: function(s){
+      return { ...s, day: s.day + 1 };
+    },
+    setFasting: function(s, on){ return { ...s, fasting: on }; },
+
+    logMeal: function(s, actor, rating){
+      var p = s.profiles[actor];
+      s = { ...s };
+      var extra = rating === "Good" ? 5 : rating === "Okay" ? 2 : 0;
+      var base = roll();
+      var total = base + extra;
+      var dbl = doubling();
+      if (dbl) total *= 2;
+      p.points += total;
+      p.meal = s.day;
+      var bs = bumpStreak(s, "health", s.day);
+      var msg = actor + " logged a meal — " + rating + ", +" + total + " pts" + (dbl ? " (doubled)" : "");
+      if (bs.note === "milestone") {
+        p.points += bs.points;
+        msg += " · 🎈 health streak " + bs.points + " pts" + (bs.freezeGained ? " · +1 freeze" : "");
+      }
+      feed(s, msg);
+      return s;
+    },
+
+    studyAction: function(s, actor, type, difficulty){
+      var p = s.profiles[actor];
+      s = { ...s };
+      var extra = type === "problem" ? (difficulty === "Easy" ? 3 : difficulty === "Medium" ? 5 : 8) : 0;
+      var total = roll() + extra;
+      var dbl = doubling();
+      if (dbl) total *= 2;
+      p.points += total;
+      p.study = s.day;
+      if (type === "problem") p.pm[difficulty === "Easy" ? 0 : difficulty === "Medium" ? 1 : 2]++;
+      p.lastStudy = s.day;
+      var bs = bumpStreak(s, "study", s.day);
+      var msg = actor + " finished a " + (type === "problem" ? difficulty + " problem" : "pomodoro") + " · +" + total + " pts" + (dbl ? " (doubled)" : "");
+      if (bs.note === "milestone") {
+        p.points += bs.points;
+        msg += " · 🎈 study streak " + bs.points + " pts" + (bs.freezeGained ? " · +1 freeze" : "");
+      }
+      feed(s, msg);
+      return s;
+    },
+
+    pray: function(s, actor, via){
+      var p = s.profiles[actor];
+      s = { ...s };
+      p.prayer = s.day;
+      p.lastPray = s.day;
+      var bs = bumpStreak(s, "prayer", s.day);
+      var msg = actor + " " + (via === "examen" ? "did the examen" : "logged prayer");
+      if (bs.note === "milestone") {
+        s.profiles.jess.points += bs.points;
+        s.profiles.robi.points += bs.points;
+        msg += " · 🎈 prayer streak " + bs.points + " pts to each";
+      }
+      feed(s, msg + ".");
+
+      // payout only when BOTH have logged on the same day
+      var other = actor === "jess" ? "robi" : "jess";
+      if (s.profiles[other].prayer === s.day) {
+        var both = roll();
+        var bd = doubling();
+        if (bd) both *= 2;
+        s.profiles.jess.points += both;
+        s.profiles.robi.points += both;
+        feed(s, "Both prayed together — +" + both + " each" + (bd ? " (doubled)" : "") + ".");
+      }
+      return s;
+    },
+
+    keepFast: function(s, actor){
+      var p = s.profiles[actor];
+      s = { ...s };
+      if (p.fast === s.day) { return s; }
+      p.fast = s.day;
+      p.points += 20;
+      feed(s, actor + " kept the fast · +20 pts.");
+      return s;
+    },
+
+    addReward: function(s, name, cost){
+      s = { ...s };
+      var id = "r" + Date.now();
+      s.rewards = s.rewards.concat([{ id:id, name:name, cost:cost }]);
+      feed(s, "Reward added to the catalog: " + name + " at " + cost + " pts.");
+      return s;
+    },
+
+    removeReward: function(s, id){
+      s = { ...s };
+      var gone = s.rewards.filter(function(r){ return r.id === id; })[0];
+      if (gone) {
+        s.rewards = s.rewards.filter(function(r){ return r.id !== id; });
+        feed(s, "Reward removed from the catalog: " + gone.name + ".");
+      }
+      return s;
+    }
+  };
+}
+
+/* ============ walkthrough tubes ============ */
+var SCRIPTS = {
+  day: [
+    "One normal day, both sides.",
+    "Watch: a single meal is one health streak day no matter how many meals, and prayer pays only when both have prayed."
+  ],
+  freeze: [
+    "A missed day with a freeze.",
+    "Build a 7-day health streak, which banks a freeze. Then skip a day: the freeze covers it and the streak holds. Keep skipping and the freeze runs out, then the streak restarts."
+  ],
+  miss: [
+    "A Miss never punishes.",
+    "A raw Miss meal still counts toward the streak and still earns base points. Watch the streak hold through a bad meal."
+  ],
+  prayer: [
+    "Prayer needs both of you.",
+    "One side praying alone grows the shared streak but pays nothing. The payout lands only when the second person prays the same day."
+  ]
+};
+
+var SCRIPT_ACTIONS = {
+  day: [
+    { step: "010", a:"logMeal", actor:"jess", rating:"Good", note:"Jess logs a Good meal." },
+    { step: "020", a:"logMeal", actor:"jess", rating:"Ok", note:"Jess logs an Okay meal, same day. Streak does NOT advance twice." },
+    { step: "030", a:"studyAction", actor:"robi", type:"pomodoro", note:"Robi does a pomodoro." },
+    { step: "040", a:"studyAction", actor:"robi", type:"problem", difficulty:"Hard", note:"Robi solves a Hard problem — bigger bonus." },
+    { step: "050", a:"pray", actor:"robi", note:"Robi prays alone. Streak grows, NO payout yet." },
+    { step: "060", a:"pray", actor:"jess", note:"Jess prays too. NOW the payout lands for both." }
+  ],
+  freeze: [
+    { step: "010", a:"logMeal", actor:"jess", rating:"Good", note:"Day 1. Health streak 1." },
+    { step: "011", a:"advance" , note:"Next morning." },
+    { step: "020", a:"logMeal", actor:"jess", rating:"Okay", note:"Day 2. Streak 2." },
+    { step: "021", a:"advance", note:"Next morning." },
+    { step: "030", a:"logMeal", actor:"jess", rating:"Good", note:"Day 3. Streak 3." },
+    { step: "031", a:"advance", note:"Next morning." },
+    { step: "040", a:"logMeal", actor:"jess", rating:"Good", note:"Day 4. Streak 4." },
+    { step: "041", a:"advance", note:"Next morning." },
+    { step: "050", a:"logMeal", actor:"jess", rating:"Miss", note:"A Miss. Still counts. Streak 5." },
+    { step: "051", a:"advance", note:"Next morning." },
+    { step: "060", a:"logMeal", actor:"jess", rating:"Good", note:"Day 6. Streak 6." },
+    { step: "061", a:"advance", note:"Next morning." },
+    { step: "070", a:"logMeal", actor:"jess", rating:"Good", note:"Day 7. MILESTONE — 25 pts, +1 freeze banked." },
+    { step: "071", a:"advance", note:"Next morning, day 8. Skip it." },
+    { step: "072", a:"advance", note:"Next morning, day 9. Skip it too." },
+    { step: "080", a:"logMeal", actor:"jess", rating:"Good", note:"Logs on day 9. One day skipped, the freeze burns, streak preserved at 7, bank now 0." },
+    { step: "081", a:"advance", note:"Next morning, day 10." },
+    { step: "090", a:"logMeal", actor:"jess", rating:"Good", note:"Day 10, streak 8. No freeze for this one." },
+    { step: "091", a:"advance", note:"Day 11. Skip." },
+    { step: "092", a:"advance", note:"Day 12. Skip." },
+    { step: "093", a:"advance", note:"Day 13. Skip. Bank still empty." },
+    { step: "094", a:"advance", note:"Day 14. Skip." },
+    { step: "100", a:"logMeal", actor:"jess", rating:"Good", note:"Logs on day 14 after 3 skipped days. No freeze left, so the health streak restarts at 1." }
+  ],
+  miss: [
+    { step: "010", a:"logMeal", actor:"jess", rating:"Miss", note:"A raw Miss. Streak still counts, base points still paid. See the feed: no judgment, just fact." },
+    { step: "011", a:"advance", note:"Next morning. Streak intact at 1." },
+    { step: "020", a:"logMeal", actor:"jess", rating:"Good", note:"A Good after a Miss. Confirms the Miss didn't hurt anything." }
+  ],
+  prayer: [
+    { step: "010", a:"pray", actor:"robi", note:"Robi prays. Streak 1, no payout." },
+    { step: "020", a:"pray", actor:"jess", note:"Jess prays the same day. Payout for both." },
+    { step: "030", a:"advance", note:"Next morning." },
+    { step: "040", a:"pray", actor:"jess", note:"Day 2: Jess alone. Streak 2, no payout." },
+    { step: "041", a:"advance", note:"Next morning (Robi never prayed day 2)." },
+    { step: "050", a:"pray", actor:"robi", note:"Day 3: Robi alone. Streak 3, no payout." },
+    { step: "051", a:"advance", note:"Next morning." },
+    { step: "060", a:"pray", actor:"robi", note:"Robi again, day 4. Streak 4." },
+    { step: "061", a:"pray", actor:"jess", note:"Jess the same day. Payout." }
+  ]
+};
+
+/* ============ page glue ============ */
+(function(){
+  var engine = createEngine();
+  var state = engine.fresh();
+  var actor = "jess";
+  var activeScript = null;   // ScriptActions entry
+  var stepIndex = -1;
+
+  function next(step){
+    if (!step) return;
+    if (step.actor) actor = step.actor;
+    var fn = {
+      logMeal: function(){ state = engine.logMeal(state, step.actor, step.rating); },
+      studyAction: function(){ state = engine.studyAction(state, step.actor, step.type, step.difficulty); },
+      pray: function(){ state = engine.pray(state, step.actor, step.via || "button"); },
+      advance: function(){ state = engine.advanceDay(state); },
+      setFasting: function(){ state = engine.setFasting(state, true); }
+    }[step.a];
+    if (fn) fn();
+    render();
+  }
+
+  function playScript(key){
+    activeScript = SCRIPT_ACTIONS[key];
+    activeScript._key = key;
+    stepIndex = -1;
+    state = engine.fresh();
+    engine.setSeed(20260909 + Object.keys(SCRIPTS).indexOf(key) * 101);
+    render(false);
+    renderScript();
+  }
+
+  function renderScript(){
+    if (!activeScript) return;
+    var meta = SCRIPTS[activeScript._key];
+    var out = "<div class='wt-note'><b>" + (meta ? meta[0] : "") + "</b> — " + (meta ? meta[1] : "") + "</div><div class='steps'>";
+    var steps = activeScript;
+    var doc = "";
+    var keys = Object.keys(steps).filter(function(k){ return k !== "_key"; });
+    for (var i = 0; i < keys.length; i++) {
+      var st = steps[keys[i]];
+      var isDone = i < stepIndex;
+      doc += "<div class='wt-step" + (isDone ? " done" : "") + "'><span>" + st.note + "</span><span class='hint'>step " + st.step + "</span></div>";
+    }
+    document.getElementById("wt-body").innerHTML = out + doc + "</div><div style='margin-top:10px'><button class='primary small' id='wt-next'>next step →</button></div>";
+    document.getElementById("wt-next").onclick = function(){
+      if (stepIndex < 0) { stepIndex = 0; }
+      else {
+        stepIndex++;
+        if (stepIndex >= keys.length) { document.getElementById("wt-next").textContent = "scene complete"; document.getElementById("wt-next").disabled = true; return; }
+      }
+      var self = this;
+      setTimeout(function(){ next(activeScript[keys[Math.min(stepIndex, keys.length - 1)]]); }, 10);
+    };
+  }
+
+  function setChanged(msg){ var el = document.getElementById("changed"); el.style.display = msg ? "" : "none"; el.textContent = msg || ""; }
+
+  function render(news){
+    var s = state;
+    document.getElementById("day-label").textContent = "— Day " + s.day + " of the build";
+    document.getElementById("pts-jess").textContent = s.profiles.jess.points;
+    document.getElementById("pts-robi").textContent = s.profiles.robi.points;
+    document.getElementById("meal-jess").textContent = s.profiles.jess.meal === s.day ? "✓" : "";
+    document.getElementById("meal-robi").textContent = s.profiles.robi.meal === s.day ? "✓" : "";
+    document.getElementById("study-jess").textContent = s.profiles.jess.study === s.day ? "✓" : "";
+    document.getElementById("study-robi").textContent = s.profiles.robi.study === s.day ? "✓" : "";
+    document.getElementById("pray-jess").textContent = s.profiles.jess.prayer === s.day ? "✓" : "";
+    document.getElementById("pray-robi").textContent = s.profiles.robi.prayer === s.day ? "✓" : "";
+    document.getElementById("diff-mix").textContent = s.profiles.robi.pm.join(" / ");
+    document.getElementById("fast-day").textContent = s.fasting ? "Today is a fasting day for the Church (Friday, Ash Wednesday, or Good Friday)" : "not a fasting day";
+    var tf = document.getElementById("toggle-fast");
+    tf.textContent = s.fasting ? "Today is a fasting day" : "Turn on fasting day";
+
+    document.getElementById("s-health").textContent = s.streaks.health.count;
+    document.getElementById("s-health-b").textContent = s.streaks.health.bank;
+    document.getElementById("s-health-l").textContent = s.streaks.health.last ?? "—";
+    document.getElementById("s-study").textContent = s.streaks.study.count;
+    document.getElementById("s-study-b").textContent = s.streaks.study.bank;
+    document.getElementById("s-study-l").textContent = s.streaks.study.last ?? "—";
+    document.getElementById("s-pray").textContent = s.streaks.prayer.count;
+    document.getElementById("s-pray-b").textContent = s.streaks.prayer.bank;
+    document.getElementById("s-pray-l").textContent = s.streaks.prayer.last ?? "—";
+
+    var t = engine.totalPoints(s);
+    document.getElementById("bof-total").textContent = t + " points banked";
+    document.getElementById("bof-bar").style.width = 0 + "%";
+    var rw = document.getElementById("rewards");
+    rw.innerHTML = s.rewards.map(function(r){
+      var pct = Math.min(100, Math.round(t / r.cost * 100));
+      var unlocked = t >= r.cost;
+      return "<div style='padding:8px 0;border-bottom:1px dashed var(--line)'>" +
+        "<div style='display:flex;justify-content:space-between;align-items:center'>" +
+        "<span><b>" + r.name + "</b> <span class='mut'>" + (unlocked ? "reached ✓" : "at " + r.cost + " pts") + "</span></span>" +
+        "<button class='small' data-rm='" + r.id + "'>&times; remove</button></div>" +
+        "<div class='bar'><div style='width:" + pct + "%'></div></div>" +
+        "<div class='mut' style='font-size:12px;margin-top:4px'>" + pct + "% of the way</div></div>";
+    }).join("") || "<div class='mut'>No rewards yet — add one above.</div>";
+    rw.querySelectorAll("[data-rm]").forEach(function(b){
+      b.onclick = function(){ state = engine.removeReward(state, b.dataset.rm); render("reward removed"); };
+    });
+
+    var feedEl = document.getElementById("feed");
+    feedEl.innerHTML = s.feed.slice(-12).reverse().map(function(l){ return "<div class='feedline'>" + l + "</div>"; }).join("");
+
+    document.getElementById("action-actor").textContent = actor === "jess" ? "Jess" : "Robi";
+    document.getElementById("pick-jess").classList.toggle("active", actor === "jess");
+    document.getElementById("pick-robi").classList.toggle("active", actor === "robi");
+
+    if (news) setChanged("Last action: " + news);
+  }
+
+  function init(){
+    var tabs = Object.keys(SCRIPTS);
+    var html = "";
+    tabs.forEach(function(k, i){
+      html += "<button class='wt-tab " + (i === 0 ? "active" : "") + "' data-key='" + k + "'>" + SCRIPTS[k][0] + "</button>";
+    });
+    document.getElementById("wts").innerHTML = html;
+    document.querySelectorAll(".wt-tab").forEach(function(b){
+      b.onclick = function(){
+        playScript(b.dataset.key);
+        document.querySelectorAll(".wt-tab").forEach(function(x){ x.classList.remove("active"); });
+        b.classList.add("active");
+      };
+    });
+    playScript("day");
+    bind();
+    render();
+  }
+
+  function bind(){
+    document.getElementById("pick-jess").onclick = function(){ actor = "jess"; render(); };
+    document.getElementById("pick-robi").onclick = function(){ actor = "robi"; render(); };
+    document.getElementById("next-day").onclick = function(){
+      state = engine.advanceDay(state);
+      setChanged("A new day begins. Streaks that skip the previous day will react on the next action.");
+      render();
+    };
+    document.getElementById("toggle-fast").onclick = function(){
+      state = engine.setFasting(state, !state.fasting);
+      setChanged(state.fasting ? "Today flagged as a Church fasting day." : "Fasting flag cleared.");
+      render();
+    };
+    document.getElementById("act-meal-good").onclick = function(){ state = engine.logMeal(state, actor, "Good"); render("meal rated Good"); };
+    document.getElementById("act-meal-ok").onclick = function(){ state = engine.logMeal(state, actor, "Okay"); render("meal rated Okay"); };
+    document.getElementById("act-meal-miss").onclick = function(){ state = engine.logMeal(state, actor, "Miss"); render("meal rated Miss"); };
+    document.getElementById("act-pomodoro").onclick = function(){ state = engine.studyAction(state, actor, "pomodoro"); render("pomodoro done"); };
+    document.getElementById("act-problem-e").onclick = function(){ state = engine.studyAction(state, actor, "problem", "Easy"); render("Easy problem solved"); };
+    document.getElementById("act-problem-m").onclick = function(){ state = engine.studyAction(state, actor, "problem", "Medium"); render("Medium problem solved"); };
+    document.getElementById("act-problem-h").onclick = function(){ state = engine.studyAction(state, actor, "problem", "Hard"); render("Hard problem solved"); };
+    document.getElementById("act-pray").onclick = function(){ state = engine.pray(state, actor, "button"); render("prayer logged"); };
+    document.getElementById("act-examen").onclick = function(){ state = engine.pray(state, actor, "examen"); render("examen done"); };
+    document.getElementById("act-fast").onclick = function(){ state = engine.keepFast(state, actor); render("fast kept"); };
+    document.getElementById("reward-add").onclick = function(){
+      var n = document.getElementById("reward-name").value.trim();
+      var c = parseInt(document.getElementById("reward-cost").value, 10);
+      if (!n || !c || c <= 0) { setChanged("Give the reward a name and a point cost."); return; }
+      state = engine.addReward(state, n, c);
+      document.getElementById("reward-name").value = "";
+      document.getElementById("reward-cost").value = "";
+      render("reward added to the catalog");
+    };
+  }
+
+  window.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>

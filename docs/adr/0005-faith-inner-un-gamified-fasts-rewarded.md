@@ -1,0 +1,3 @@
+# Faith layer split: inner life un-gamified, fasting earns points
+
+Prayer and the examen deliberately carry no points, while observing a binding fast day (Friday, Ash Wednesday, Good Friday) earns a flat 20. The split respects the domain: the interior life is not a game, and its reward is the shared practice itself, while fasting is an external act with a concrete yes/no that matches the Church's own structure of obligation. Rejected: gamifying the examen (would cheapen it) or withholding points from fasts (would drop one of the Church's five precepts out of the reward loop). The examen line still lands in the feed, but as a neutral "Robi did the examen", never scored.

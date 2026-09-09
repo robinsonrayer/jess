@@ -1,0 +1,3 @@
+# Reward the choice, never punish the miss
+
+The reward rules optimize for retention over purity: logging any meal earns base points and always counts toward the health streak, even when rated Miss. Good earns a +5 bonus, Okay +2, Miss +0. Streaks never break on content, only on silence, and each streak banks two freezes so a missed day preserves the count. Deliberately rejected: punishing poor ratings, resetting streaks on bad days, or shaming copy. Operant conditioning research is unanimous that punishment produces rebound eating and app abandonment, so the system only ever rewards showing up and nudges toward Good with a visible points difference.

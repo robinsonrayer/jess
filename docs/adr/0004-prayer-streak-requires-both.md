@@ -1,0 +1,3 @@
+# Points for the prayer streak require both partners
+
+The shared prayer streak advances, and its points pay out, only on days when both profiles log prayer (either taps "prayed today" or completes the examen). One-sided logging keeps the streak alive but pays nothing. The decision makes the couple grow together rather than in parallel: it is a joint daily intention, not a surveillance meter. Rejected: per-person prayer points, which would reward one partner drifting ahead of the other. The point is that they are in step.

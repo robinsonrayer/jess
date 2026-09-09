@@ -1,0 +1,3 @@
+# Sharing boundary: summaries public to the pair, details private
+
+Each profile owns its detailed log. The shared surface shows only what serves the couple: streaks, points, activity feed lines, prayer status, difficulty mix, and any opt-in highlight line. Meal photos and ratings are shared to Robi by default so he can coach, but Jess's private notes stay hers unless shared. Robi's task labels and problem names stay his; Jess sees counts and difficulty mix, never specific problems. The boundary is asymmetric by design: coaching food benefits from seeing the food, coaching a job search is harmed by watching failures in real time. Anything beyond the default is a highlight line the owner chooses.
