@@ -1,6 +1,7 @@
 import { createEngine } from "./engine.js";
 import { loadState, saveState, makeStorage } from "./storage.js";
 import { SHARED_PASSWORD } from "./password.js";
+import { startSync, pushState } from "./firebase.js";
 
 const storage = makeStorage();
 const engine = createEngine();
@@ -25,6 +26,12 @@ function switchView(name){
 
 function persist(){
   saveState(state, storage);
+  pushState(state);
+}
+
+function adoptCloudState(cloud){
+  state = cloud;
+  render();
 }
 
 function fmtPoints(n){ return n.toLocaleString("en-IN"); }
@@ -107,6 +114,7 @@ function choose(profile){
   show("screen-app");
   switchView("today");
   render();
+  startSync(adoptCloudState);
 }
 
 function bind(){
