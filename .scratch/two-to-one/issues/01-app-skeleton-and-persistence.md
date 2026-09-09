@@ -8,7 +8,8 @@
 
 - [x] Profile picker guarded by one shared password (per ADR-0001); wrong password blocks entry
 - [x] Selecting Jess or Robi sets the acting profile and shows it clearly
-- [x] Day view renders the four state tables: per-profile points, streaks and freezes, Build Our Future pool, feed
+- [x] Day view renders the four state areas across three tabs (Today / Encouragement / Our Future): per-profile points, streaks and freezes, Build Our Future pool, feed
 - [x] Engine `fresh()` seeds the full state shape including the reward catalog with the Marriage default at 1,000,000
 - [x] Storage wrapper round-trips full state to localStorage and back; reload restores points, streaks, day counter, and catalog intact
 - [x] Reward catalog empty-state renders (no rewards yet message shows when the list is cleared)
+- [x] UI/UX pass: Catholic-styled login screen, tabbed single-scroll layout, serif liturgy palette, patron-badge profile cards

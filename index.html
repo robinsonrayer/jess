@@ -3,111 +3,131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="data:,">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233c2a5e'/%3E%3Cpath d='M16 7v18M9 12h14' stroke='%23d9b96a' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
 <title>Two to One</title>
-<style>
-  :root { --ink:#1f2430; --mut:#6b7280; --acc:#4f46e5; --line:#e5e7eb; --good:#16a34a; --ok:#ca8a04; --miss:#dc2626; --pray:#7c3aed; }
-  * { box-sizing:border-box; }
-  body { font-family:system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--ink); background:#f7f7f9; margin:0; padding:0 0 40px; }
-  header { padding:22px 20px 14px; max-width:760px; margin:0 auto; border-bottom:1px solid var(--line); }
-  header h1 { margin:0 0 6px; font-size:22px; }
-  header p { margin:0; color:var(--mut); font-size:14px; line-height:1.5; }
-  main { max-width:760px; margin:0 auto; padding:16px 20px; }
-  section { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
-  section h2 { margin:0 0 10px; font-size:15px; }
-  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  button { font:inherit; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:9px; padding:9px 12px; cursor:pointer; }
-  button:hover { background:#f3f4f6; }
-  button.primary { background:var(--acc); border-color:var(--acc); color:#fff; }
-  button.small { padding:5px 9px; font-size:13px; }
-  .tag { display:inline-block; font-size:12px; font-weight:600; padding:3px 8px; border-radius:999px; }
-  .tag.jess { background:#fce7f3; color:#9d174d; }
-  .tag.robi { background:#dbeafe; color:#1e40af; }
-  .good{color:var(--good)} .ok{color:var(--ok)} .miss{color:var(--miss)} .pray{color:var(--pray)} .mut{color:var(--mut)}
-  table { width:100%; border-collapse:collapse; font-size:14px; }
-  th,td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
-  th { color:var(--mut); font-weight:500; font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
-  .bar { height:10px; background:#eef2ff; border-radius:999px; overflow:hidden; margin-top:6px; }
-  .bar > div { height:100%; background:var(--acc); }
-  .feedline { padding:6px 0; border-bottom:1px dashed var(--line); font-size:14px; }
-  .feedline:last-child { border-bottom:none; }
-  input[type=password], input[type=text] { font:inherit; border:1px solid var(--line); border-radius:9px; padding:10px 12px; flex:1; min-width:140px; }
-  .screen { display:none; }
-  .screen.active { display:block; }
-  .centered { max-width:420px; margin:0 auto; text-align:center; }
-  .notice { font-size:13px; color:var(--miss); margin-top:8px; height:1em; }
-  .actor.active { outline:2px solid var(--acc); outline-offset:2px; }
-</style>
+<link rel="stylesheet" href="/src/styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
 </head>
 <body>
-<header>
-  <h1>Two to One</h1>
-  <p>Jess and Robi, building one shared life's worth of discipline.</p>
-</header>
 
-<main>
-  <div id="screen-password" class="screen active">
-    <section class="centered">
-      <h2>This home has a door</h2>
-      <div class="row">
-        <input type="password" id="password-input" placeholder="shared password" autocomplete="current-password">
-        <button id="password-submit" class="primary">Enter</button>
+<div id="screen-login" class="screen active">
+  <div class="login-glow login-glow-a"></div>
+  <div class="login-glow login-glow-b"></div>
+  <div class="login-card">
+    <svg class="login-cross" viewBox="0 0 48 64" aria-hidden="true">
+      <path d="M24 4 v56 M9 22 h30" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+    </svg>
+    <h1>Two to One</h1>
+    <p class="login-latin">Duo in carne una</p>
+    <p class="login-sub">A discipline of two, offered as one. For Jess and Robi.</p>
+
+    <form id="password-form">
+      <input type="password" id="password-input" placeholder="the shared password" autocomplete="current-password" autofocus>
+      <button type="submit" id="password-submit">Enter</button>
+    </form>
+    <p class="notice" id="password-error"></p>
+
+    <div id="login-profiles" class="login-profiles">
+      <p class="login-profiles-title">Who is entering?</p>
+      <div class="login-profiles-grid">
+        <button id="login-jess" class="login-profile jess" data-profile="jess">
+          <span class="actor-monogram">J</span>
+          <span class="actor-name">Jess</span>
+          <span class="actor-patron">under Our Lady</span>
+        </button>
+        <button id="login-robi" class="login-profile robi" data-profile="robi">
+          <span class="actor-monogram">R</span>
+          <span class="actor-name">Robi</span>
+          <span class="actor-patron">under St. Joseph</span>
+        </button>
       </div>
-      <p class="notice" id="password-error"></p>
-    </section>
+    </div>
+
+    <p class="login-foot">This home has a door.</p>
   </div>
+</div>
 
-  <div id="screen-picker" class="screen">
-    <section class="centered">
-      <h2>Who is acting?</h2>
-      <div class="row" style="justify-content:center">
-        <button id="pick-jess" class="tag jess">Jess</button>
-        <button id="pick-robi" class="tag robi">Robi</button>
+<div id="screen-app" class="screen">
+  <header class="topbar">
+    <span class="brand">Two to One <span class="brand-cross">†</span></span>
+    <div class="topbar-right">
+      <span class="whoami" id="whoami"></span>
+      <span class="day-chip">Day <b id="day-label">1</b></span>
+    </div>
+  </header>
+
+  <main>
+    <section id="view-today" class="view active">
+      <p class="lede">One day at a time.</p>
+
+      <div class="points-pool">
+        <div class="pool-card jess">
+          <b id="pts-jess">0</b><span>Jess</span>
+        </div>
+        <div class="pool-card robi">
+          <b id="pts-robi">0</b><span>Robi</span>
+        </div>
       </div>
-    </section>
-  </div>
 
-  <div id="screen-app" class="screen">
-    <section>
-      <h2>Who is acting?</h2>
-      <div class="row">
-        <button id="actor-jess" class="tag jess">Jess</button>
-        <button id="actor-robi" class="tag robi">Robi</button>
-        <button id="app-advance" class="small">It's the next morning</button>
+      <div class="streaks">
+        <div class="streak-card health">
+          <span class="streak-label">Health</span>
+          <span class="streak-count" id="s-health">0</span>
+          <span class="streak-owner">Jess</span>
+          <span class="streak-freeze">freezes <b id="s-health-b">0</b>/2</span>
+          <span class="streak-last">last <span id="s-health-l">—</span></span>
+        </div>
+        <div class="streak-card study">
+          <span class="streak-label">Study</span>
+          <span class="streak-count" id="s-study">0</span>
+          <span class="streak-owner">Robi</span>
+          <span class="streak-freeze">freezes <b id="s-study-b">0</b>/2</span>
+          <span class="streak-last">last <span id="s-study-l">—</span></span>
+        </div>
+        <div class="streak-card prayer">
+          <span class="streak-label">Prayer</span>
+          <span class="streak-count" id="s-pray">0</span>
+          <span class="streak-owner">shared</span>
+          <span class="streak-freeze">freezes <b id="s-pray-b">0</b>/2</span>
+          <span class="streak-last">last <span id="s-pray-l">—</span></span>
+        </div>
       </div>
+
+      <button id="app-advance" class="ghost">It's the next morning</button>
+      <footer class="blessing">J.M.J. · duo in carne una</footer>
     </section>
 
-    <section>
-      <h2>Today <span id="day-label" class="mut" style="font-size:13px"></span></h2>
-      <table>
-        <tr><th></th><th>Jess</th><th>Robi</th></tr>
-        <tr><td>Points this profile</td><td id="pts-jess"></td><td id="pts-robi"></td></tr>
-      </table>
-    </section>
-
-    <section>
-      <h2>Streaks and freezes</h2>
-      <table>
-        <tr><th>Streak</th><th>Days</th><th>Freezes banked</th><th>Last active on day</th></tr>
-        <tr><td class="good">Health (any meal)</td><td id="s-health"></td><td id="s-health-b"></td><td id="s-health-l"></td></tr>
-        <tr><td class="ok">Study (any focus)</td><td id="s-study"></td><td id="s-study-b"></td><td id="s-study-l"></td></tr>
-        <tr><td class="pray">Shared prayer</td><td id="s-pray"></td><td id="s-pray-b"></td><td id="s-pray-l"></td></tr>
-      </table>
-    </section>
-
-    <section>
-      <h2>Build Our Future</h2>
-      <div id="bof-total" style="font-size:20px;font-weight:700"></div>
-      <div class="bar"><div id="bof-bar" style="width:0%"></div></div>
-      <div id="rewards" style="margin-top:12px"></div>
-    </section>
-
-    <section>
-      <h2>Encouragement feed</h2>
+    <section id="view-feed" class="view">
+      <h2>Encouragement</h2>
+      <p class="lede">Witnessed, never judged.</p>
       <div id="feed"></div>
     </section>
-  </div>
-</main>
+
+    <section id="view-future" class="view">
+      <h2>Build Our Future</h2>
+      <p class="lede">Every point from either domain feeds this.</p>
+      <div class="pool-total"><b id="bof-total">0</b><span>points banked</span></div>
+      <div id="rewards"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar" id="tabbar">
+    <button class="tab active" data-view="today">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Today
+    </button>
+    <button class="tab" data-view="feed">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6.5 5.5 5.5 0 0 1 21.5 11c-2.5 4.5-9.5 9-9.5 9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      Encouragement
+    </button>
+    <button class="tab" data-view="future">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="13" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="13" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 11.2L10 8 M17 11.2L14 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Our Future
+    </button>
+  </nav>
+</div>
 
 <script type="module" src="/src/app.js"></script>
 </body>
