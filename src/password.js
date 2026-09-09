@@ -1,1 +1,1 @@
-export const SHARED_PASSWORD = "our-grace";
+export const SHARED_PASSWORD = "christislord";
