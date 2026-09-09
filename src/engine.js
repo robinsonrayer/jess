@@ -151,8 +151,10 @@ export function createEngine(){
     },
 
     pray: function(s, actor, via){
-      s = clone(s);
       var p = s.profiles[actor];
+      if (p.prayer === s.day) { return s; }
+      s = clone(s);
+      p = s.profiles[actor];
       p.prayer = s.day;
       var bs = bumpStreak(s, "prayer", s.day);
       var msg = name(actor) + " " + (via === "examen" ? "did the examen" : "logged prayer");

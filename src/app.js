@@ -39,8 +39,6 @@ function adoptCloudState(cloud){
 
 function fmtPoints(n){ return n.toLocaleString("en-IN"); }
 
-function pctOf(n, of){ return Math.min(100, Math.round(n / of * 100)); }
-
 function esc(s){
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -52,13 +50,15 @@ function todayDone(p, field){ return p[field] === state.day; }
 /* ----- Reward catalog (ticket 07) ----- */
 
 function rewardRow(r, t){
-  const pct = pctOf(t, r.cost);
+  const raw = t / r.cost * 100;
+  const pctText = raw >= 1 ? Math.round(raw) + "%" : (raw > 0 ? raw.toFixed(1) + "%" : "0%");
+  const barW = t > 0 ? Math.max(raw, 4) : 0;
   const reached = t >= r.cost;
   return "<div class='reward" + (reached ? " reached" : "") + "'>" +
     "<div class='reward-top'><span class='reward-name'>" + esc(r.name) + "</span>" +
     "<span class='reward-cost'>" + (reached ? "reached ✓" : "at " + fmtPoints(r.cost) + " pts") + "</span></div>" +
-    "<div class='bar'><div style='width:" + pct + "%'></div></div>" +
-    "<div class='reward-pct'>" + pct + "% of the way</div>" +
+    "<div class='bar'><div style='width:" + barW + "%'></div></div>" +
+    "<div class='reward-pct'>" + pctText + " of the way</div>" +
     "<div class='reward-edit'><button data-action='rename' data-id='" + r.id + "'>Rename</button>" +
     "<button data-action='remove' data-id='" + r.id + "'>Remove</button></div></div>";
 }
@@ -139,27 +139,24 @@ function renderLogZone(){
     block += "</div>";
   }
 
-  block += "<div class='panel prayer'><div class='panel-head'><h3>Prayer</h3></div>";
+  block += "<div class='panel prayer'><div class='panel-head'><h3>Prayer</h3></div>" +
+    "<div class='prayer-row'><span class='act-btn' id='pray-btn'>Have we prayed together</span>" +
+    "<span class='act-btn ghost-act' id='examen-btn'>Do examen</span></div>";
   if (todayDone(p, "prayer")) {
-    block += "<div class='logged-line'><span>Prayed today</span></div>";
-  } else {
-    block += "<div class='prayer-row'><span class='act-btn' id='pray-btn'>I prayed today</span>" +
-      "<span class='act-btn ghost-act' id='examen-btn'>I did the examen</span></div>";
+    block += "<span class='prayed-chip'>prayed today ✓</span>";
   }
   block += "</div>";
 
-  block += "<div class='panel fasting'><div class='panel-head'><h3>Fasting</h3></div>";
   if (state.fasting) {
+    block += "<div class='panel fasting'><div class='panel-head'><h3>Fasting</h3></div>";
     if (todayDone(p, "fast")) {
       block += "<div class='logged-line'><span>Kept the fast</span></div>";
     } else {
       block += "<p class='rubric'>Today is a day of fasting.</p>" +
         "<span class='act-btn' id='fast-btn'>I kept the fast</span>";
     }
-  } else {
-    block += "<span class='act-btn dead' disabled>Kept the fast</span>";
+    block += "</div>";
   }
-  block += "</div>";
 
   zone.innerHTML = block;
 }
@@ -253,6 +250,18 @@ function syncFastingFlag(){
 }
 
 function drawFeedActs(){
+  const flirts = [
+    "Send a little love 💌",
+    "Send a kiss 💋",
+    "Send a wink 😉",
+    "Send a hug 🤗",
+    "Send a love note 💘",
+    "Send a smile 😊",
+    "Send a heart ❤️",
+    "Send a prayer for us 🙏"
+  ];
+  document.getElementById("encourage-btn").textContent =
+    flirts[Math.floor(Math.random() * flirts.length)];
   const canHighlight = actor && (
     (actor === "jess" && state.profiles.jess.mealNote) ||
     (actor === "robi" && state.profiles.robi.studyLabel)

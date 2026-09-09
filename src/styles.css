@@ -332,6 +332,16 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 .rating-row, .prayer-row, .study-row, .meal-photo-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .rating-row .rating, .rating-row .difficulty { flex: 1; }
 
+.prayed-chip {
+  display: inline-block;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--green);
+  border: 1px dashed var(--green);
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+
 #log-zone input[type="text"], #log-zone input:not([type="file"]),
 #meal-note, #study-label {
   width: 100%;

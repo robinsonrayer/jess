@@ -265,6 +265,15 @@ test("prayer: logging twice same day does not double the streak", () => {
   assert.equal(s.streaks.prayer.count, 1);
 });
 
+test("prayer: a second tap the same day is a no-op, no duplicate feed line", () => {
+  const e = createEngine();
+  let s = e.pray(e.fresh(), "robi", "button");
+  const lines = s.feed.length;
+  const same = e.pray(s, "robi", "examen");
+  assert.equal(same.feed.length, lines);
+  assert.equal(JSON.stringify(same), JSON.stringify(s));
+});
+
 /* ----- Fasting (ticket 05) ----- */
 
 test("fast: keeps the fast once per person per day for flat 20", () => {
