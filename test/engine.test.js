@@ -24,7 +24,7 @@ test("fresh() seeds the full state shape", () => {
   assert.equal(s.day, 1);
   assert.equal(s.fasting, false);
   assert.deepEqual(Object.keys(s.profiles).sort(), ["jess", "robi"]);
-  for (const k of ["points", "meals", "studies", "prayer", "fast", "difficultyMix"]) {
+  for (const k of ["points", "meals", "studies", "prayer", "fast", "chastity", "difficultyMix"]) {
     assert.ok(k in s.profiles.jess, "jess has " + k);
     assert.ok(k in s.profiles.robi, "robi has " + k);
   }
@@ -67,6 +67,7 @@ test("normalize() backfills new fields onto a legacy state shape", () => {
     assert.equal(s.profiles[k].difficultyMix.length, 3);
     assert.equal(s.profiles[k].prayer, null);
     assert.equal(s.profiles[k].fast, null);
+    assert.deepEqual(s.profiles[k].chastity, []);
   }
   assert.equal(s.profiles.jess.points, 7);
   assert.equal(s.profiles.jess.meals.length, 1);
@@ -365,6 +366,50 @@ test("fast: binding days are Fridays, Ash Wednesday, Good Friday", () => {
   assert.equal(isBindingFastDay(easterDate(2026)), false, "Easter itself is not binding");
 });
 
+/* ----- Chastity ----- */
+
+test("chastity: logs once per person per day, zero points", () => {
+  const e = createEngine();
+  let s = e.fresh();
+  s = e.keepChastity(s, "jess");
+  assert.equal(s.profiles.jess.chastity.length, 1);
+  assert.equal(s.profiles.jess.chastity[0].day, 1);
+  assert.equal(s.profiles.jess.points, 0);
+  s = e.keepChastity(s, "jess");
+  assert.equal(s.profiles.jess.chastity.length, 1, "no duplicate");
+});
+
+test("chastity: each partner logs independently", () => {
+  const e = createEngine();
+  let s = e.fresh();
+  s = e.keepChastity(s, "jess");
+  s = e.keepChastity(s, "robi");
+  assert.equal(s.profiles.jess.chastity.length, 1);
+  assert.equal(s.profiles.robi.chastity.length, 1);
+});
+
+test("chastity: posts a feed line", () => {
+  const e = createEngine();
+  const s = e.keepChastity(e.fresh(), "jess");
+  assert.ok(s.feed.some(l => l.includes("Jess kept chastity today")));
+});
+
+test("chastity: survives normalize", () => {
+  const e = createEngine();
+  let s = e.fresh();
+  s = e.keepChastity(s, "jess");
+  const n = e.normalize(s);
+  assert.equal(n.profiles.jess.chastity.length, 1);
+  assert.equal(n.profiles.jess.chastity[0].day, 1);
+});
+
+test("chastity: input state not mutated", () => {
+  const e = createEngine();
+  const before = e.fresh();
+  e.keepChastity(before, "jess");
+  assert.deepEqual(before, e.fresh());
+});
+
 /* ----- Streak protection and milestones (ticket 06) ----- */
 
 test("streak: a one-day gap burns one freeze and holds the count", () => {
@@ -511,6 +556,7 @@ test("actions never mutate the input state", () => {
     s => e.studyAction(s, "robi", "problem", "Hard", "lbl"),
     s => e.pray(s, "jess", "examen"),
     s => e.keepFast(e.setFasting(s, true), "jess"),
+    s => e.keepChastity(s, "jess"),
     s => e.encourage(s, "jess"),
     s => e.addReward(s, "x", 1),
     s => e.renameReward(s, "r1", "y"),

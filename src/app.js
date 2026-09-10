@@ -73,6 +73,8 @@ function other(i){ return i === "jess" ? "robi" : "jess"; }
 
 function todayDone(p, field){ return p[field] === state.day; }
 
+function chastityDone(p){ return p.chastity && p.chastity.some(function(c){ return c.day === state.day; }); }
+
 /* ----- Reward catalog (ticket 07) ----- */
 
 function rewardRow(r, t){
@@ -266,6 +268,14 @@ function renderLogZone(){
     "<span class='act-btn ghost-act' id='examen-btn'>Do examen</span></div>";
   if (todayDone(p, "prayer")) {
     block += "<span class='prayed-chip'>prayed today ✓</span>";
+  }
+  block += "</div>";
+
+  block += "<div class='panel chastity-panel'><div class='panel-head'><h3>Chastity</h3></div>";
+  if (chastityDone(p)) {
+    block += "<span class='prayed-chip'>kept chastity today ✓</span>";
+  } else {
+    block += "<span class='act-btn' id='chastity-btn'>We stayed chaste today</span>";
   }
   block += "</div>";
 
@@ -496,6 +506,7 @@ function bind(){
     if (t.id === "examen-btn") openExamen();
     if (t.id === "pray-btn") { state = engine.pray(state, actor, "button"); render(); }
     if (t.id === "fast-btn") { state = engine.keepFast(state, actor); render(); }
+    if (t.id === "chastity-btn") { state = engine.keepChastity(state, actor); render(); }
     if (t.id === "study-pomodoro") { state = engine.studyAction(state, actor, "pomodoro", null, labelVal()); render(); }
     if (t.dataset.rating) {
       state = engine.logMeal(state, actor, t.dataset.rating, noteVal(), mealPhoto || undefined);

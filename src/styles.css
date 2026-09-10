@@ -279,6 +279,7 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 
 .panel .panel-head h3 { font-size: 19px; color: var(--violet); font-weight: 500; margin-bottom: 10px; }
 .panel.prayer { border-left: 4px solid var(--gold); }
+.panel.chastity-panel { border-left: 4px solid var(--pink); }
 .panel.fasting { border-left: 4px solid var(--blue); }
 
 .rubric {
