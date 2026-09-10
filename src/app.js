@@ -10,6 +10,7 @@ let state;
 let actor = null;
 let first = true;
 let mealPhoto = null;
+let hasCloudDoc = false;
 
 const SESSION_KEY = "two-to-one.session.v1";
 
@@ -58,9 +59,18 @@ function persist(){
 }
 
 function adoptCloudState(cloud){
+  if (!cloud) {
+    if (!hasCloudDoc) {
+      hasCloudDoc = true;
+      persist();
+    }
+    return;
+  }
+  hasCloudDoc = true;
   state = engine.normalize(cloud);
   syncFastingFlag();
   render();
+  saveState(state, storage);
 }
 
 function fmtPoints(n){ return n.toLocaleString("en-IN"); }
@@ -354,7 +364,7 @@ function doExamen(){
   const note = document.getElementById("examen-note").value.trim();
   state = engine.pray(state, actor, "examen", note || undefined);
   document.getElementById("examen-modal").classList.remove("open");
-  render();
+  commit();
 }
 
 /* ----- Boot / render / bind ----- */
@@ -372,6 +382,10 @@ function render(){
   renderLogZone();
   renderCrossZone();
   drawFeedActs();
+}
+
+function commit(){
+  render();
   persist();
 }
 
@@ -499,25 +513,25 @@ function bind(){
     state = engine.advanceDay(state);
     syncFastingFlag();
     mealPhoto = null;
-    render();
+    commit();
   });
 
   document.getElementById("log-zone").addEventListener("click", function(e){
     const t = e.target;
     if (t.id === "meal-photo-btn") document.getElementById("meal-photo-input").click();
     if (t.id === "examen-btn") openExamen();
-    if (t.id === "pray-btn") { state = engine.pray(state, actor, "button"); render(); }
-    if (t.id === "fast-btn") { state = engine.keepFast(state, actor); render(); }
-    if (t.id === "chastity-btn") { state = engine.keepChastity(state, actor); render(); }
-    if (t.id === "study-pomodoro") { state = engine.studyAction(state, actor, "pomodoro", null, labelVal()); render(); }
+    if (t.id === "pray-btn") { state = engine.pray(state, actor, "button"); commit(); }
+    if (t.id === "fast-btn") { state = engine.keepFast(state, actor); commit(); }
+    if (t.id === "chastity-btn") { state = engine.keepChastity(state, actor); commit(); }
+    if (t.id === "study-pomodoro") { state = engine.studyAction(state, actor, "pomodoro", null, labelVal()); commit(); }
     if (t.dataset.rating) {
       state = engine.logMeal(state, actor, t.dataset.rating, noteVal(), mealPhoto || undefined);
       mealPhoto = null;
-      render();
+      commit();
     }
     if (t.dataset.difficulty) {
       state = engine.studyAction(state, actor, "problem", t.dataset.difficulty, labelVal());
-      render();
+      commit();
     }
   });
 
@@ -527,7 +541,7 @@ function bind(){
 
   document.getElementById("encourage-btn").addEventListener("click", function(){
     state = engine.encourage(state, actor, pendingFlirt);
-    render();
+    commit();
   });
 
   document.addEventListener("click", function(e){
@@ -565,7 +579,7 @@ function bind(){
       state = engine.addReward(state, name, cost);
       document.getElementById("reward-name").value = "";
       document.getElementById("reward-cost").value = "";
-      render();
+      commit();
     }
   });
 
@@ -575,14 +589,14 @@ function bind(){
     const id = btn.dataset.id;
     if (btn.dataset.action === "remove") {
       state = engine.removeReward(state, id);
-      render();
+      commit();
     }
     if (btn.dataset.action === "rename") {
       const r = state.rewards.find(function(x){ return x.id === id; });
       const fresh = prompt("Rename reward", r ? r.name : "");
       if (fresh && fresh.trim()) {
         state = engine.renameReward(state, id, fresh.trim());
-        render();
+        commit();
       }
     }
   });

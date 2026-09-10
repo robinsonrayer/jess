@@ -42,7 +42,10 @@ export async function startSync(handler){
   docRef = doc(db, "couple", "state");
   setDocFn = setDoc;
   const unsubscribe = onSnapshot(docRef, function(snap){
-    if (!snap.exists()) return;
+    if (!snap.exists()) {
+      if (onCloudState) onCloudState(null);
+      return;
+    }
     const cloudState = normalize(snap.data());
     if (!cloudState) return;
     const key = JSON.stringify(cloudState);
