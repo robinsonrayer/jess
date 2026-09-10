@@ -24,7 +24,7 @@ test("fresh() seeds the full state shape", () => {
   assert.equal(s.day, 1);
   assert.equal(s.fasting, false);
   assert.deepEqual(Object.keys(s.profiles).sort(), ["jess", "robi"]);
-  for (const k of ["points", "meals", "studies", "prayer", "fast", "encouraged", "difficultyMix"]) {
+  for (const k of ["points", "meals", "studies", "prayer", "fast", "difficultyMix"]) {
     assert.ok(k in s.profiles.jess, "jess has " + k);
     assert.ok(k in s.profiles.robi, "robi has " + k);
   }
@@ -67,7 +67,6 @@ test("normalize() backfills new fields onto a legacy state shape", () => {
     assert.equal(s.profiles[k].difficultyMix.length, 3);
     assert.equal(s.profiles[k].prayer, null);
     assert.equal(s.profiles[k].fast, null);
-    assert.equal(s.profiles[k].encouraged, null);
   }
   assert.equal(s.profiles.jess.points, 7);
   assert.equal(s.profiles.jess.meals.length, 1);
@@ -480,13 +479,10 @@ test("pool: totalPoints sums both profiles", () => {
 
 /* ----- Encouragement and highlight lines (ticket 08) ----- */
 
-test("feed: encouragement is one line per day", () => {
+test("feed: every encourage tap posts its own line (no daily cap)", () => {
   const e = createEngine();
   let s = e.fresh();
   s = e.encourage(s, "robi");
-  s = e.encourage(s, "robi");
-  assert.equal(s.feed.filter(l => l.includes("sent Jess encouragement")).length, 1);
-  s = e.advanceDay(s);
   s = e.encourage(s, "robi");
   assert.equal(s.feed.filter(l => l.includes("sent Jess encouragement")).length, 2);
 });
