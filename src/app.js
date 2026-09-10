@@ -417,10 +417,13 @@ let pendingFlirt = "encouragement.";
 
 function drawFeedActs(){
   const score = dayScore(other(actor));
-  const tier = score >= 5 ? 2 : score >= 2 ? 1 : 0;
+  let tier = score >= 5 ? 2 : score >= 2 ? 1 : 0;
+  const them = state.profiles[other(actor)];
+  const keptYesterday = them.chastity && them.chastity.some(function(c){ return c.day === state.day - 1; });
+  if (!keptYesterday) tier = 0;
   pendingFlirt = FLIRT_TIERS[tier][Math.floor(Math.random() * FLIRT_TIERS[tier].length)];
   document.getElementById("encourage-btn").textContent = "Send " + pendingFlirt;
-  document.getElementById("flirt-hint").textContent = FLIRT_HINTS[tier];
+  document.getElementById("flirt-hint").textContent = keptYesterday ? FLIRT_HINTS[tier] : "— chastity not kept yesterday; stay tender";
 }
 
 function boot(){
