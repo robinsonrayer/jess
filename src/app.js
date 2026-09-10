@@ -240,7 +240,6 @@ function renderLogZone(){
     const pastS = studies.filter(m => m.day !== state.day);
     block += "<div class='panel'><div class='panel-head'><h3>Today's study</h3></div>" +
       "<div class='study-row'><span class='act-btn' id='study-pomodoro'>Pomodoro</span></div>" +
-      "<p class='rubric'>or a problem, by difficulty</p>" +
       "<input type='text' id='study-label' placeholder='a label — visible to Jess' autocomplete='off'>" +
       "<div class='rating-row'><span class='act-btn difficulty easy' data-difficulty='Easy'>Easy</span>" +
       "<span class='act-btn difficulty medium' data-difficulty='Medium'>Medium</span>" +
