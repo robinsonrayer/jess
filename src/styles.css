@@ -415,6 +415,18 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 }
 .past-days[open] summary { margin-bottom: 12px; }
 
+.study-list { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.study-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 14px;
+  color: var(--ink);
+}
+.study-line span { font-weight: 600; }
+.study-line em { font-style: italic; color: var(--ink-soft); }
+
 .meal-photo-row { align-items: center; }
 
 /* ---------- Partner cross view ---------- */
@@ -513,6 +525,14 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 /* ---------- Encouragement ---------- */
 
 .feed-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.flirt-hint {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-soft);
+  margin-top: 2px;
+  flex-basis: 100%;
+  text-align: left;
+}
 .hidden { display: none; }
 
 #feed { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }

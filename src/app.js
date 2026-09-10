@@ -167,20 +167,36 @@ function renderLogZone(){
       block += "</details>";
     }
   } else {
-    const logged = todayDone(p, "study");
-    block += "<div class='panel'><div class='panel-head'><h3>Today's study</h3></div>";
-    if (logged) {
-      block += "<div class='logged-line'><span>Logged — " +
-        (p.difficultyMix[0] + p.difficultyMix[1] + p.difficultyMix[2] > 0 ? "a problem" : "a pomodoro") + "</span></div>";
-    } else {
-      block += "<div class='study-row'><span class='act-btn' id='study-pomodoro'>Pomodoro</span></div>" +
-        "<p class='rubric'>or a problem, by difficulty</p>" +
-        "<div class='rating-row'><span class='act-btn difficulty easy' data-difficulty='Easy'>Easy</span>" +
-        "<span class='act-btn difficulty medium' data-difficulty='Medium'>Medium</span>" +
-        "<span class='act-btn difficulty hard' data-difficulty='Hard'>Hard</span></div>" +
-        "<input type='text' id='study-label' placeholder='a label only you see' autocomplete='off'>";
+    const studies = p.studies || [];
+    const todaysS = studies.filter(m => m.day === state.day);
+    const pastS = studies.filter(m => m.day !== state.day);
+    block += "<div class='panel'><div class='panel-head'><h3>Today's study</h3></div>" +
+      "<div class='study-row'><span class='act-btn' id='study-pomodoro'>Pomodoro</span></div>" +
+      "<p class='rubric'>or a problem, by difficulty</p>" +
+      "<div class='rating-row'><span class='act-btn difficulty easy' data-difficulty='Easy'>Easy</span>" +
+      "<span class='act-btn difficulty medium' data-difficulty='Medium'>Medium</span>" +
+      "<span class='act-btn difficulty hard' data-difficulty='Hard'>Hard</span></div>" +
+      "<input type='text' id='study-label' placeholder='a label — visible to Jess' autocomplete='off'>";
+    if (todaysS.length) {
+      block += "<div class='study-list'>" + todaysS.map(function(st){
+        return "<div class='study-line'><span>" + esc(st.type === "problem" ? (st.difficulty + " problem") : "pomodoro") + "</span>" +
+          (st.label ? " <em>" + esc(st.label) + "</em>" : "") + "</div>";
+      }).join("") + "</div>";
     }
     block += "</div>";
+    if (pastS.length) {
+      block += "<details class='past-days'><summary>Past study</summary>";
+      const sdays = [...new Set(pastS.map(m => m.day))].sort((a, b) => b - a);
+      sdays.forEach(d => {
+        block += "<p class='rubric'>Day " + d + "</p><div class='study-list'>";
+        pastS.forEach(function(st){
+          if (st.day === d) block += "<div class='study-line'><span>" + esc(st.type === "problem" ? (st.difficulty + " problem") : "pomodoro") + "</span>" +
+            " · Day " + d + (st.label ? " <em>" + esc(st.label) + "</em>" : "") + "</div>";
+        });
+        block += "</div>";
+      });
+      block += "</details>";
+    }
   }
 
   block += "<div class='panel prayer'><div class='panel-head'><h3>Prayer</h3></div>" +
@@ -220,21 +236,34 @@ function renderCrossZone(){
       inner = "<div class='cross-card empty'>Jess hasn't logged a meal yet.</div>";
     } else {
       let grid = "";
+      let notes = "";
       tp.meals.forEach(function(m, i){
-        if (m.day >= state.day - 2) grid += mealThumb(m, i, them, false);
+        if (m.day >= state.day - 2) {
+          grid += mealThumb(m, i, them, true);
+          if (m.note) notes += "<div class='study-line'><span>Day " + m.day + "</span> <em>" + esc(m.note) + "</em></div>";
+        }
       });
       inner = "<div class='cross-card'><div class='cross-meta'><strong>Jess's meals</strong>" +
-        "<span>last 3 days</span></div><div class='thumb-grid'>" + grid + "</div></div>";
+        "<span>last 3 days</span></div><div class='thumb-grid'>" + grid + "</div>" + notes + "</div>";
     }
   } else {
     const [E, M, H] = tp.difficultyMix;
     const total = E + M + H || 1;
+    let list = "";
+    tp.studies.forEach(function(st){
+      if (st.day >= state.day - 2) {
+        list += "<div class='study-line'><span>" + esc(st.type === "problem" ? (st.difficulty + " problem") : "pomodoro") + "</span>" +
+          " · Day " + st.day + (st.label ? " <em>" + esc(st.label) + "</em>" : "") + "</div>";
+      }
+    });
     inner = "<div class='cross-card study-mix'><div class='cross-meta'><strong>Robi's difficulty mix</strong>" +
       "<span>" + (E + M + H) + " problems this run</span></div>" +
       "<div class='mixbar'><div class='mix easy' style='width:" + Math.round(E / total * 100) + "%'></div>" +
       "<div class='mix medium' style='width:" + Math.round(M / total * 100) + "%'></div>" +
       "<div class='mix hard' style='width:" + Math.round(H / total * 100) + "%'></div></div>" +
-      "<div class='mix-legend'><span class='easy'>E " + E + "</span><span class='medium'>M " + M + "</span><span class='hard'>H " + H + "</span></div></div>";
+      "<div class='mix-legend'><span class='easy'>E " + E + "</span><span class='medium'>M " + M + "</span><span class='hard'>H " + H + "</span></div>" +
+      (list ? "<div class='study-list'>" + list + "</div>" : "") +
+      "</div>";
   }
   const caption = theirName + " sees this about you.";
   zone.innerHTML = "<p class='cross-kicker'>" + esc(caption) + "</p>" + inner;
@@ -299,26 +328,44 @@ function syncFastingFlag(){
   }
 }
 
+function dayScore(recipient){
+  const p = state.profiles[recipient];
+  const day = state.day;
+  let score = 0;
+  if (recipient === "jess") {
+    p.meals.forEach(m => {
+      if (m.day === day) score += m.rating === "Good" ? 2 : m.rating === "Okay" ? 1 : 0;
+    });
+  } else {
+    p.studies.forEach(st => {
+      if (st.day === day) score += st.type === "problem"
+        ? (st.difficulty === "Hard" ? 2 : st.difficulty === "Medium" ? 1 : 0)
+        : 1;
+    });
+  }
+  const streakKey = recipient === "jess" ? "health" : "study";
+  score += Math.floor(state.streaks[streakKey].count / 7);
+  return score;
+}
+
+const FLIRT_TIERS = [
+  [ "a smile 😊", "a hug 🤗", "a wink 😉", "a warm prayer 🙏" ],
+  [ "a kiss 💋", "a squeeze 🤭", "a little blush 🙈", "a note that means a bit more 💌" ],
+  [ "a lot of love, since you worked hard today 🔥", "a promise for later 😏", "more than you'd guess, on a day like this 🥵", "my whole heart to your streak tonight 💘" ]
+];
+const FLIRT_HINTS = [
+  "— a quiet day; stay tender",
+  "— a good day; don't hold back",
+  "— they crushed today; swing big"
+];
+let pendingFlirt = "encouragement.";
+
 function drawFeedActs(){
-  const flirts = [
-    "Send a little love 💌",
-    "Send a kiss 💋",
-    "Send a wink 😉",
-    "Send a hug 🤗",
-    "Send a love note 💘",
-    "Send a smile 😊",
-    "Send a heart ❤️",
-    "Send a prayer for us 🙏"
-  ];
-  document.getElementById("encourage-btn").textContent =
-    flirts[Math.floor(Math.random() * flirts.length)];
-  const jessNote = (state.profiles.jess.meals.length &&
-    state.profiles.jess.meals[state.profiles.jess.meals.length - 1].note) || "";
-  const canHighlight = actor && (
-    (actor === "jess" && jessNote) ||
-    (actor === "robi" && state.profiles.robi.studyLabel)
-  );
-  document.getElementById("highlight-btn").classList.toggle("hidden", !canHighlight);
+  const score = dayScore(other(actor));
+  const tier = score >= 5 ? 2 : score >= 2 ? 1 : 0;
+  pendingFlirt = FLIRT_TIERS[tier][Math.floor(Math.random() * FLIRT_TIERS[tier].length)];
+  document.getElementById("encourage-btn").textContent = "Send " + pendingFlirt;
+  document.getElementById("flirt-hint").textContent = FLIRT_HINTS[tier];
 }
 
 function boot(){
@@ -421,7 +468,7 @@ function bind(){
   });
 
   document.getElementById("encourage-btn").addEventListener("click", function(){
-    state = engine.encourage(state, actor);
+    state = engine.encourage(state, actor, pendingFlirt);
     render();
   });
 
@@ -432,11 +479,6 @@ function bind(){
       return;
     }
     if (e.target.id === "lightbox" || e.target.id === "lb-close") closeLightbox();
-  });
-
-  document.getElementById("highlight-btn").addEventListener("click", function(){
-    state = engine.highlight(state, actor);
-    render();
   });
 
   document.getElementById("examen-next").addEventListener("click", function(){

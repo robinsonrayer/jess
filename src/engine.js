@@ -13,11 +13,11 @@ export function createEngine(){
       fasting: false,
       profiles: {
         jess: { points:0, meals:[],
-                study:0, studyLabel:null, prayer:null, fast:null,
-                encouraged:null, highlighted:null, difficultyMix:[0,0,0] },
+                studies:[], prayer:null, fast:null,
+                encouraged:null, difficultyMix:[0,0,0] },
         robi: { points:0, meals:[],
-                study:0, studyLabel:null, prayer:null, fast:null,
-                encouraged:null, highlighted:null, difficultyMix:[0,0,0] }
+                studies:[], prayer:null, fast:null,
+                encouraged:null, difficultyMix:[0,0,0] }
       },
       streaks: {
         health: { count:0, bank:0, last:null },
@@ -37,8 +37,8 @@ export function createEngine(){
     return {
       ...s,
       profiles: {
-        jess: { ...s.profiles.jess, meals: s.profiles.jess.meals.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.jess.difficultyMix.slice() },
-        robi: { ...s.profiles.robi, meals: s.profiles.robi.meals.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.robi.difficultyMix.slice() }
+        jess: { ...s.profiles.jess, meals: s.profiles.jess.meals.map(function(m){ return { ...m }; }), studies: s.profiles.jess.studies.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.jess.difficultyMix.slice() },
+        robi: { ...s.profiles.robi, meals: s.profiles.robi.meals.map(function(m){ return { ...m }; }), studies: s.profiles.robi.studies.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.robi.difficultyMix.slice() }
       },
       streaks: {
         health:  { ...s.streaks.health },
@@ -87,16 +87,30 @@ export function createEngine(){
           photo: p.mealPhoto || ""
         });
       }
+      var hadProblems = p.difficultyMix && p.difficultyMix.reduce(function(a, b){ return a + b; }, 0) > 0;
+      var studies = Array.isArray(p.studies) ? p.studies.map(function(m){ return { ...m }; }) : [];
+      if (p.study !== null && p.study !== undefined) {
+        studies.push({
+          day: p.study,
+          type: hadProblems ? "problem" : "pomodoro",
+          difficulty: null,
+          label: p.studyLabel || ""
+        });
+      }
       s.profiles[k] = {
         ...f.profiles[k],
         ...p,
         meals: meals,
+        studies: studies,
         difficultyMix: (p.difficultyMix && p.difficultyMix.length === 3) ? p.difficultyMix : [0,0,0]
       };
       delete s.profiles[k].meal;
       delete s.profiles[k].mealRating;
       delete s.profiles[k].mealNote;
       delete s.profiles[k].mealPhoto;
+      delete s.profiles[k].study;
+      delete s.profiles[k].studyLabel;
+      delete s.profiles[k].highlighted;
     });
     ["health", "study", "prayer"].forEach(function(k){
       s.streaks[k] = { ...f.streaks[k], ...(s.streaks && s.streaks[k]) };
@@ -157,11 +171,15 @@ export function createEngine(){
       var dbl = doubling();
       if (dbl) total *= 2;
       p.points += total;
-      p.study = s.day;
+      p.studies.push({
+        day: s.day,
+        type: type,
+        difficulty: type === "problem" ? difficulty : null,
+        label: label !== undefined ? label : ""
+      });
       if (type === "problem") {
         p.difficultyMix[difficulty === "Easy" ? 0 : difficulty === "Medium" ? 1 : 2]++;
       }
-      if (label !== undefined) p.studyLabel = label;
       var bs = bumpStreak(s, "study", s.day);
       var what = type === "problem" ? difficulty + " problem" : "pomodoro";
       var msg = name(actor) + " finished a " + what + " · +" + total + " pts" + (dbl ? " (doubled)" : "");
@@ -213,26 +231,13 @@ export function createEngine(){
       return s;
     },
 
-    encourage: function(s, actor){
+    encourage: function(s, actor, message){
       s = clone(s);
       var p = s.profiles[actor];
       if (p.encouraged === s.day) { return s; }
       p.encouraged = s.day;
       var other = actor === "jess" ? "Robi" : "Jess";
-      feed(s, name(actor) + " sent " + other + " encouragement.");
-      return s;
-    },
-
-    highlight: function(s, actor){
-      s = clone(s);
-      var p = s.profiles[actor];
-      var note = actor === "jess" && p.meals.length
-        ? p.meals[p.meals.length - 1].note : "";
-      var detail = actor === "jess" ? note : p.studyLabel;
-      if (!detail) { return s; }
-      if (p.highlighted === s.day) { return s; }
-      p.highlighted = s.day;
-      feed(s, name(actor) + " shared a highlight: " + detail);
+      feed(s, name(actor) + " sent " + other + " " + (message || "encouragement."));
       return s;
     },
 

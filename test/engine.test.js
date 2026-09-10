@@ -24,7 +24,7 @@ test("fresh() seeds the full state shape", () => {
   assert.equal(s.day, 1);
   assert.equal(s.fasting, false);
   assert.deepEqual(Object.keys(s.profiles).sort(), ["jess", "robi"]);
-  for (const k of ["points", "meals", "study", "studyLabel", "prayer", "fast", "encouraged", "highlighted", "difficultyMix"]) {
+  for (const k of ["points", "meals", "studies", "prayer", "fast", "encouraged", "difficultyMix"]) {
     assert.ok(k in s.profiles.jess, "jess has " + k);
     assert.ok(k in s.profiles.robi, "robi has " + k);
   }
@@ -65,16 +65,16 @@ test("normalize() backfills new fields onto a legacy state shape", () => {
   const s = e.normalize(legacy);
   for (const k of ["jess", "robi"]) {
     assert.equal(s.profiles[k].difficultyMix.length, 3);
-    assert.equal(s.profiles[k].studyLabel, null);
     assert.equal(s.profiles[k].prayer, null);
     assert.equal(s.profiles[k].fast, null);
     assert.equal(s.profiles[k].encouraged, null);
-    assert.equal(s.profiles[k].highlighted, null);
   }
   assert.equal(s.profiles.jess.points, 7);
   assert.equal(s.profiles.jess.meals.length, 1);
   assert.deepEqual(s.profiles.jess.meals[0], { day: 2, rating: null, note: "", photo: "" });
-  assert.equal(s.profiles.robi.study, 1);
+  assert.equal(s.profiles.robi.studies.length, 1);
+  assert.equal(s.profiles.robi.studies[0].day, 1);
+  assert.equal(s.profiles.robi.studies[0].type, "pomodoro");
   assert.deepEqual(s.streaks.study, { count:0, bank:0, last:null });
   assert.equal(s.streaks.health.last, 2);
   assert.deepEqual(s.rewards, []);
@@ -226,7 +226,7 @@ test("study: pomodoro advances the study streak once per day", () => {
   s = e.studyAction(s, "robi", "pomodoro");
   s = e.studyAction(s, "robi", "pomodoro");
   assert.equal(s.streaks.study.count, 1);
-  assert.equal(s.profiles.robi.study, 1);
+  assert.equal(s.profiles.robi.studies.length, 2);
 });
 
 test("study: harder problems pay more on the same base", () => {
@@ -239,19 +239,21 @@ test("study: harder problems pay more on the same base", () => {
 test("study: difficulty mix counts E/M/H", () => {
   const e = createEngine();
   let s = e.fresh();
-  s = e.studyAction(s, "robi", "problem", "Easy");
-  s = e.studyAction(s, "robi", "problem", "Medium");
-  s = e.studyAction(s, "robi", "problem", "Hard");
+  s = e.studyAction(s, "robi", "problem", "Easy", "sliding window warmup");
+  s = e.studyAction(s, "robi", "problem", "Medium", "two pointers with a twist");
+  s = e.studyAction(s, "robi", "problem", "Hard", "kadane on steroids");
   s = e.studyAction(s, "robi", "pomodoro");
   assert.deepEqual(s.profiles.robi.difficultyMix, [1, 1, 1]);
+  assert.equal(s.profiles.robi.studies.length, 4);
+  assert.equal(s.profiles.robi.studies[3].type, "pomodoro");
+  assert.equal(s.profiles.robi.studies[3].difficulty, null);
 });
 
-test("study: label stays private until a highlight line", () => {
+test("study: each entry carries its own label by default", () => {
   const e = createEngine();
-  let s = e.studyAction(e.fresh(), "robi", "problem", "Medium", "two pointers with a twist");
-  assert.ok(s.feed.every(l => !l.includes("pointer")));
-  s = e.highlight(s, "robi");
-  assert.ok(s.feed.some(l => l.includes("two pointers with a twist")));
+  const s = e.studyAction(e.fresh(), "robi", "problem", "Medium", "two pointers with a twist");
+  assert.equal(s.profiles.robi.studies[0].label, "two pointers with a twist");
+  assert.equal(s.profiles.robi.studies[0].difficulty, "Medium");
 });
 
 test("study: feed line is neutral, never judgment-bearing", () => {
@@ -477,18 +479,10 @@ test("feed: encouragement is one line per day", () => {
   assert.equal(s.feed.filter(l => l.includes("sent Jess encouragement")).length, 2);
 });
 
-test("feed: Jess can opt a meal note into a highlight line", () => {
+test("feed: an explicit flirt message is delivered in the line", () => {
   const e = createEngine();
-  let s = e.logMeal(e.fresh(), "jess", "Good", "cooked together");
-  assert.ok(s.feed.every(l => !l.includes("cooked together")));
-  s = e.highlight(s, "jess");
-  assert.ok(s.feed.some(l => l.includes("Jess shared a highlight: cooked together")));
-});
-
-test("feed: highlight without a private detail is a no-op", () => {
-  const e = createEngine();
-  const s = e.highlight(e.logMeal(e.fresh(), "jess", "Good"), "jess");
-  assert.ok(s.feed.every(l => !l.includes("shared a highlight")));
+  const s = e.encourage(e.fresh(), "jess", "a kiss 💋");
+  assert.ok(s.feed.some(l => l.includes("Jess sent Robi a kiss 💋")));
 });
 
 test("feed: lines are day-tagged", () => {
@@ -510,7 +504,6 @@ test("actions never mutate the input state", () => {
     s => e.pray(s, "jess", "examen"),
     s => e.keepFast(e.setFasting(s, true), "jess"),
     s => e.encourage(s, "jess"),
-    s => e.highlight(s, "robi"),
     s => e.addReward(s, "x", 1),
     s => e.renameReward(s, "r1", "y"),
     s => e.removeReward(s, "r1")
