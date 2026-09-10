@@ -1,4 +1,4 @@
-export const STATE_KEY = "two-to-one.state.v1";
+export const STATE_KEY = "two-to-one.state.v2";
 
 export function loadState(storage){
   try {
