@@ -135,22 +135,43 @@ function mealThumb(m, mi, owner, showNote){
 }
 
 function studyLine(st){
-  const kind = st.type === "problem" ? (st.difficulty || "Problem") : "Pomodoro";
-  return "<div class='study-line'><span class='study-tag " + (st.type === "problem" ? "diff-" + kind.toLowerCase() : "pomodoro") + "'>" +
-    esc(kind) + "</span>" + (st.label ? "<em>" + esc(st.label) + "</em>" : "") + "</div>";
+  const kind = st.type === "problem" ? "Problem" : "Pomodoro";
+  return "<div class='study-line'><span class='study-kind " + (st.type === "problem" ? "problem" : "pomodoro") + "'>" +
+    esc(kind) + "</span>" + (st.label ? "<em class='study-note'>" + esc(st.label) + "</em>" : "") + "</div>";
 }
 
-function studyDays(entries){
+function crossStudyCard(entries){
   const recent = entries.filter(st => st.day >= state.day - 2);
-  if (!recent.length) return "";
-  const days = [...new Set(recent.map(st => st.day))].sort((a, b) => b - a);
-  let out = "";
-  days.forEach(d => {
-    out += "<p class='rubric'>Day " + d + "</p><div class='study-list'>";
-    recent.forEach(st => { if (st.day === d) out += studyLine(st); });
-    out += "</div>";
+  if (!recent.length) return "<div class='cross-card empty'>Robi hasn't logged any study yet.</div>";
+  const problems = recent.filter(st => st.type === "problem").length;
+  const pomos = recent.length - problems;
+
+  let tiles = "";
+  for (let d = state.day; d >= state.day - 2; d--) {
+    const n = recent.filter(st => st.day === d).length;
+    tiles += "<div class='pulse-day" + (n ? " on" : "") + "'><span class='pulse-num'>Day " + d + "</span>" +
+      "<strong class='pulse-count'>" + (n ? n : "—") + "</strong></div>";
+  }
+
+  let notes = "";
+  let noteCount = 0;
+  recent.filter(st => st.label && st.label.trim()).forEach(st => {
+    const kind = st.type === "problem" ? "Problem" : "Pomodoro";
+    notes += "<div class='study-line'><span class='study-kind " + (st.type === "problem" ? "problem" : "pomodoro") + "'>" + kind + "</span>" +
+      "<em class='study-note'>" + esc(st.label) + "</em></div>";
+    noteCount++;
   });
-  return out;
+  if (notes) notes = "<details class='study-notes'><summary>notes (" + noteCount + ")</summary>" +
+    "<div class='study-list'>" + notes + "</div></details>";
+
+  let summary = "";
+  if (problems) summary += problems + (problems === 1 ? " problem" : " problems");
+  if (pomos) summary += (summary ? " · " : "") + pomos + (pomos === 1 ? " pomodoro" : " pomodoros");
+
+  return "<div class='cross-card'><div class='cross-meta'><strong>Robi's study</strong><span>last 3 days</span></div>" +
+    "<div class='pulse-summary'>" + summary + "</div>" +
+    "<div class='pulse'>" + tiles + "</div>" +
+    notes + "</div>";
 }
 
 function openLightbox(owner, mi, showNote){
@@ -288,14 +309,9 @@ function renderCrossZone(){
         "<span>last 3 days</span></div><div class='thumb-grid'>" + grid + "</div>" + notes + "</div>";
     }
   } else {
-    const studyHtml = studyDays(tp.studies);
-    inner = studyHtml
-      ? "<div class='cross-card'><div class='cross-meta'><strong>Robi's study</strong>" +
-        "<span>last 3 days</span></div>" + studyHtml + "</div>"
-      : "<div class='cross-card empty'>Robi hasn't logged any study yet.</div>";
+    inner = crossStudyCard(tp.studies);
   }
-  const caption = theirName + " sees this about you.";
-  zone.innerHTML = "<p class='cross-kicker'>" + esc(caption) + "</p>" + inner;
+  zone.innerHTML = inner;
 }
 
 /* ----- Examen (ticket 04) ----- */
