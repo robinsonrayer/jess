@@ -153,14 +153,14 @@ test("meal: base rolls 8-15 and doubling exists under some seed", () => {
   assert.ok(doubled.feed[0].includes("(doubled)"));
 });
 
-test("meal: note and photo stay on the entry and never reach the feed", () => {
+test("meal: note and photo stay on the entry, note is published to the feed", () => {
   const e = createEngine();
   const s = e.logMeal(e.fresh(), "jess", "Good", "had a rough lunch", "data:img");
   assert.equal(s.profiles.jess.meals.length, 1);
   assert.equal(s.profiles.jess.meals[0].day, 1);
   assert.equal(s.profiles.jess.meals[0].note, "had a rough lunch");
   assert.equal(s.profiles.jess.meals[0].photo, "data:img");
-  assert.ok(s.feed.every(l => !l.includes("rough lunch")), "note is private");
+  assert.ok(s.feed.some(l => l.includes("rough lunch")), "note reaches the feed");
 });
 
 test("meal: each meal is its own entry, all logged the same day", () => {
@@ -296,6 +296,18 @@ test("prayer: examen counts as praying, neutral line, zero points", () => {
   assert.equal(s.streaks.prayer.count, 1);
   assert.equal(s.profiles.robi.points, 0);
   assert.ok(s.feed.some(l => l.includes("Robi did the examen")));
+});
+
+test("feed: the typed examen note is published to the encouragement", () => {
+  const e = createEngine();
+  const s = e.pray(e.fresh(), "jess", "examen", "I was kinder than I meant to be");
+  assert.ok(s.feed.some(l => l.includes("did the examen") && l.includes("I was kinder than I meant to be")));
+});
+
+test("feed: a meal note is published to the encouragement", () => {
+  const e = createEngine();
+  const s = e.logMeal(e.fresh(), "jess", "Good", "chicken and dal, felt light");
+  assert.ok(s.feed.some(l => l.includes("logged a meal") && l.includes("chicken and dal, felt light")));
 });
 
 test("prayer: logging twice same day does not double the streak", () => {

@@ -533,6 +533,24 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
   flex-basis: 100%;
   text-align: left;
 }
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translate(-50%, 16px);
+  background: var(--gold-dark);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .25);
+  font-size: 15px;
+  max-width: 88vw;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s, transform .3s;
+  z-index: 50;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
 .hidden { display: none; }
 
 #feed { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }

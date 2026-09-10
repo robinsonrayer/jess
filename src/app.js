@@ -24,6 +24,32 @@ function switchView(name){
   document.querySelectorAll(".tab").forEach(function(el){
     el.classList.toggle("active", el.dataset.view === name);
   });
+  if (name === "feed") flirtToastFor();
+}
+
+const FLIRT_SEEN_KEY = "two-to-one.flirt.seen.v1";
+let toastTimer = null;
+
+function showToast(html){
+  const t = document.getElementById("toast");
+  t.innerHTML = html;
+  t.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 4500);
+}
+
+function flirtToastFor(){
+  const meName = actor === "jess" ? "Jess" : "Robi";
+  const themName = actor === "jess" ? "Robi" : "Jess";
+  const pre = new RegExp("^Day \\d+ — " + themName + " sent " + meName + " ");
+  let last = null;
+  state.feed.forEach(function(l){ if (pre.test(l)) last = l; });
+  if (!last) return;
+  const seen = JSON.parse(storage.getItem(FLIRT_SEEN_KEY) || "[]");
+  if (seen.indexOf(last) !== -1) return;
+  seen.push(last);
+  storage.setItem(FLIRT_SEEN_KEY, JSON.stringify(seen));
+  showToast("<strong>" + themName + " sent you:</strong> " + esc(last.replace(pre, "")));
 }
 
 function persist(){
@@ -142,7 +168,7 @@ function renderLogZone(){
       "<div class='rating-row'><span class='act-btn rating good' data-rating='Good'>Good</span>" +
       "<span class='act-btn rating okay' data-rating='Okay'>Okay</span>" +
       "<span class='act-btn rating miss' data-rating='Miss'>Miss</span></div>" +
-      "<input type='text' id='meal-note' placeholder='a private note, just for you' autocomplete='off'>";
+      "<input type='text' id='meal-note' placeholder='a note for the encouragement feed' autocomplete='off'>";
     if (!todays.length) {
       block += "<p class='feed-empty'>No meal logged today yet.</p>";
     } else {
@@ -298,7 +324,7 @@ function showExamenStep(){
 
 function doExamen(){
   const note = document.getElementById("examen-note").value.trim();
-  state = engine.pray(state, actor, "examen");
+  state = engine.pray(state, actor, "examen", note || undefined);
   document.getElementById("examen-modal").classList.remove("open");
   render();
 }
@@ -350,8 +376,8 @@ function dayScore(recipient){
 
 const FLIRT_TIERS = [
   [ "a smile 😊", "a hug 🤗", "a wink 😉", "a warm prayer 🙏" ],
-  [ "a kiss 💋", "a squeeze 🤭", "a little blush 🙈", "a note that means a bit more 💌" ],
-  [ "a lot of love, since you worked hard today 🔥", "a promise for later 😏", "more than you'd guess, on a day like this 🥵", "my whole heart to your streak tonight 💘" ]
+  [ "a squeeze 🤭", "a little blush 🙈", "a note that means a bit more 💌", "a tight hand-squeeze 🤞" ],
+  [ "a kiss — muah 💋", "a lot of love, since you worked hard today 🔥", "a promise for later 😏", "my whole heart to your streak tonight 💘" ]
 ];
 const FLIRT_HINTS = [
   "— a quiet day; stay tender",
@@ -366,6 +392,7 @@ function drawFeedActs(){
   pendingFlirt = FLIRT_TIERS[tier][Math.floor(Math.random() * FLIRT_TIERS[tier].length)];
   document.getElementById("encourage-btn").textContent = "Send " + pendingFlirt;
   document.getElementById("flirt-hint").textContent = FLIRT_HINTS[tier];
+  document.getElementById("encourage-sent").classList.toggle("hidden", !todayDone(state.profiles[actor], "encouraged"));
 }
 
 function boot(){

@@ -155,6 +155,7 @@ export function createEngine(){
       });
       var bs = bumpStreak(s, "health", s.day);
       var msg = name(actor) + " logged a meal — " + rating + ", +" + total + " pts" + (dbl ? " (doubled)" : "");
+      if (note) msg += " — \"" + note + "\"";
       if (bs.note === "milestone") {
         p.points += bs.points;
         msg += " · 🎈 health streak " + bs.points + " pts" + (bs.freezeGained ? " · +1 freeze" : "");
@@ -191,16 +192,17 @@ export function createEngine(){
       return s;
     },
 
-    pray: function(s, actor, via){
+    pray: function(s, actor, via, note){
       s = clone(s);
       var p = s.profiles[actor];
+      var noted = note ? " — \"" + note + "\"" : "";
       if (p.prayer === s.day) {
-        if (via === "examen") { feed(s, name(actor) + " did the examen."); }
+        if (via === "examen") { feed(s, name(actor) + " did the examen" + noted + "."); }
         return s;
       }
       p.prayer = s.day;
       var bs = bumpStreak(s, "prayer", s.day);
-      var msg = name(actor) + " " + (via === "examen" ? "did the examen" : "logged prayer");
+      var msg = name(actor) + " " + (via === "examen" ? "did the examen" : "logged prayer") + noted;
       if (bs.note === "milestone") {
         s.profiles.jess.points += bs.points;
         s.profiles.robi.points += bs.points;
