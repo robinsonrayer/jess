@@ -134,6 +134,25 @@ function mealThumb(m, mi, owner, showNote){
     "</span>";
 }
 
+function studyLine(st){
+  const kind = st.type === "problem" ? (st.difficulty || "Problem") : "Pomodoro";
+  return "<div class='study-line'><span class='study-tag " + (st.type === "problem" ? "diff-" + kind.toLowerCase() : "pomodoro") + "'>" +
+    esc(kind) + "</span>" + (st.label ? "<em>" + esc(st.label) + "</em>" : "") + "</div>";
+}
+
+function studyDays(entries){
+  const recent = entries.filter(st => st.day >= state.day - 2);
+  if (!recent.length) return "";
+  const days = [...new Set(recent.map(st => st.day))].sort((a, b) => b - a);
+  let out = "";
+  days.forEach(d => {
+    out += "<p class='rubric'>Day " + d + "</p><div class='study-list'>";
+    recent.forEach(st => { if (st.day === d) out += studyLine(st); });
+    out += "</div>";
+  });
+  return out;
+}
+
 function openLightbox(owner, mi, showNote){
   const m = state.profiles[owner].meals[mi];
   if (!m) return;
@@ -204,10 +223,7 @@ function renderLogZone(){
       "<span class='act-btn difficulty hard' data-difficulty='Hard'>Hard</span></div>" +
       "<input type='text' id='study-label' placeholder='a label — visible to Jess' autocomplete='off'>";
     if (todaysS.length) {
-      block += "<div class='study-list'>" + todaysS.map(function(st){
-        return "<div class='study-line'><span>" + esc(st.type === "problem" ? (st.difficulty + " problem") : "pomodoro") + "</span>" +
-          (st.label ? " <em>" + esc(st.label) + "</em>" : "") + "</div>";
-      }).join("") + "</div>";
+      block += "<div class='study-list'>" + todaysS.map(studyLine).join("") + "</div>";
     }
     block += "</div>";
     if (pastS.length) {
@@ -216,8 +232,7 @@ function renderLogZone(){
       sdays.forEach(d => {
         block += "<p class='rubric'>Day " + d + "</p><div class='study-list'>";
         pastS.forEach(function(st){
-          if (st.day === d) block += "<div class='study-line'><span>" + esc(st.type === "problem" ? (st.difficulty + " problem") : "pomodoro") + "</span>" +
-            " · Day " + d + (st.label ? " <em>" + esc(st.label) + "</em>" : "") + "</div>";
+          if (st.day === d) block += studyLine(st);
         });
         block += "</div>";
       });
@@ -273,23 +288,11 @@ function renderCrossZone(){
         "<span>last 3 days</span></div><div class='thumb-grid'>" + grid + "</div>" + notes + "</div>";
     }
   } else {
-    const [E, M, H] = tp.difficultyMix;
-    const total = E + M + H || 1;
-    let list = "";
-    tp.studies.forEach(function(st){
-      if (st.day >= state.day - 2) {
-        list += "<div class='study-line'><span>" + esc(st.type === "problem" ? (st.difficulty + " problem") : "pomodoro") + "</span>" +
-          " · Day " + st.day + (st.label ? " <em>" + esc(st.label) + "</em>" : "") + "</div>";
-      }
-    });
-    inner = "<div class='cross-card study-mix'><div class='cross-meta'><strong>Robi's difficulty mix</strong>" +
-      "<span>" + (E + M + H) + " problems this run</span></div>" +
-      "<div class='mixbar'><div class='mix easy' style='width:" + Math.round(E / total * 100) + "%'></div>" +
-      "<div class='mix medium' style='width:" + Math.round(M / total * 100) + "%'></div>" +
-      "<div class='mix hard' style='width:" + Math.round(H / total * 100) + "%'></div></div>" +
-      "<div class='mix-legend'><span class='easy'>E " + E + "</span><span class='medium'>M " + M + "</span><span class='hard'>H " + H + "</span></div>" +
-      (list ? "<div class='study-list'>" + list + "</div>" : "") +
-      "</div>";
+    const studyHtml = studyDays(tp.studies);
+    inner = studyHtml
+      ? "<div class='cross-card'><div class='cross-meta'><strong>Robi's study</strong>" +
+        "<span>last 3 days</span></div>" + studyHtml + "</div>"
+      : "<div class='cross-card empty'>Robi hasn't logged any study yet.</div>";
   }
   const caption = theirName + " sees this about you.";
   zone.innerHTML = "<p class='cross-kicker'>" + esc(caption) + "</p>" + inner;
@@ -392,7 +395,6 @@ function drawFeedActs(){
   pendingFlirt = FLIRT_TIERS[tier][Math.floor(Math.random() * FLIRT_TIERS[tier].length)];
   document.getElementById("encourage-btn").textContent = "Send " + pendingFlirt;
   document.getElementById("flirt-hint").textContent = FLIRT_HINTS[tier];
-  document.getElementById("encourage-sent").classList.toggle("hidden", !todayDone(state.profiles[actor], "encouraged"));
 }
 
 function boot(){

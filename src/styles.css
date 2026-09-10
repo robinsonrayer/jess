@@ -6,6 +6,7 @@
   --violet: #3d2c5c;
   --violet-deep: #241a3a;
   --gold: #b98a2f;
+  --gold-dark: #8a6520;
   --gold-soft: #d9b565;
   --pink: #b46a83;
   --blue: #5a7fb2;
@@ -415,16 +416,29 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 }
 .past-days[open] summary { margin-bottom: 12px; }
 
-.study-list { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.study-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 .study-line {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   align-items: baseline;
   font-size: 14px;
   color: var(--ink);
 }
-.study-line span { font-weight: 600; }
+.study-tag {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--paper-2);
+  color: var(--ink-soft);
+}
+.study-tag.diff-easy { background: rgba(95, 138, 95, .15); color: #456a45; }
+.study-tag.diff-medium { background: rgba(185, 138, 47, .18); color: var(--gold-dark); }
+.study-tag.diff-hard { background: rgba(180, 106, 131, .18); color: var(--pink); }
+.study-tag.pomodoro { background: rgba(90, 127, 178, .15); color: var(--blue); }
 .study-line em { font-style: italic; color: var(--ink-soft); }
 
 .meal-photo-row { align-items: center; }
@@ -450,24 +464,11 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
   margin-bottom: 12px;
 }
 .cross-card.empty { color: var(--ink-soft); font-style: italic; display: block; }
-.cross-card.study-mix { flex-direction: column; align-items: stretch; }
 .cross-card .meal-photo { width: 84px; margin: 0; border-radius: 8px; }
 
 .cross-meta { display: flex; flex-direction: column; gap: 2px; }
 .cross-meta strong { font-size: 18px; color: var(--violet); font-weight: 500; }
 .cross-meta span { font-size: 15px; font-style: italic; color: var(--ink-soft); }
-
-.mixbar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--paper-2); }
-.mix { height: 100%; }
-.mix.easy { background: var(--green); }
-.mix.medium { background: var(--gold-soft); }
-.mix.hard { background: var(--pink); }
-
-.mix-legend { display: flex; gap: 14px; font-size: 14px; color: var(--ink-soft); margin-top: 6px; }
-.mix-legend span::before { content: "● "; font-size: 11px; }
-.mix-legend .easy::before { color: var(--green); }
-.mix-legend .medium::before { color: var(--gold); }
-.mix-legend .hard::before { color: var(--pink); }
 
 /* ---------- Streaks ---------- */
 

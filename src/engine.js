@@ -14,10 +14,10 @@ export function createEngine(){
       profiles: {
         jess: { points:0, meals:[],
                 studies:[], prayer:null, fast:null,
-                encouraged:null, difficultyMix:[0,0,0] },
+                difficultyMix:[0,0,0] },
         robi: { points:0, meals:[],
                 studies:[], prayer:null, fast:null,
-                encouraged:null, difficultyMix:[0,0,0] }
+                difficultyMix:[0,0,0] }
       },
       streaks: {
         health: { count:0, bank:0, last:null },
@@ -87,12 +87,11 @@ export function createEngine(){
           photo: p.mealPhoto || ""
         });
       }
-      var hadProblems = p.difficultyMix && p.difficultyMix.reduce(function(a, b){ return a + b; }, 0) > 0;
       var studies = Array.isArray(p.studies) ? p.studies.map(function(m){ return { ...m }; }) : [];
       if (p.study !== null && p.study !== undefined) {
         studies.push({
           day: p.study,
-          type: hadProblems ? "problem" : "pomodoro",
+          type: "pomodoro",
           difficulty: null,
           label: p.studyLabel || ""
         });
@@ -111,6 +110,7 @@ export function createEngine(){
       delete s.profiles[k].study;
       delete s.profiles[k].studyLabel;
       delete s.profiles[k].highlighted;
+      delete s.profiles[k].encouraged;
     });
     ["health", "study", "prayer"].forEach(function(k){
       s.streaks[k] = { ...f.streaks[k], ...(s.streaks && s.streaks[k]) };
@@ -235,9 +235,6 @@ export function createEngine(){
 
     encourage: function(s, actor, message){
       s = clone(s);
-      var p = s.profiles[actor];
-      if (p.encouraged === s.day) { return s; }
-      p.encouraged = s.day;
       var other = actor === "jess" ? "Robi" : "Jess";
       feed(s, name(actor) + " sent " + other + " " + (message || "encouragement."));
       return s;
