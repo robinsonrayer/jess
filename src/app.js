@@ -207,7 +207,7 @@ function renderLogZone(){
       "<div class='meal-photo-row'><button class='act-btn' id='meal-photo-btn'>Add a photo</button>" +
       "<input type='file' id='meal-photo-input' accept='image/*' hidden></div>" +
       "<div id='meal-photo-preview'></div>" +
-      "<input type='text' id='meal-note' placeholder='a note for the encouragement feed' autocomplete='off'>" +
+      "<input type='text' id='meal-note' placeholder='a note about the meal' autocomplete='off'>" +
       "<div class='rating-row'><span class='act-btn rating good' data-rating='Good'>Good</span>" +
       "<span class='act-btn rating okay' data-rating='Okay'>Okay</span>" +
       "<span class='act-btn rating miss' data-rating='Miss'>Miss</span></div>";
