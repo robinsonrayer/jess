@@ -367,6 +367,54 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 .logged-line span { font-style: italic; }
 .logged-line .meal-photo { max-width: 64px; height: auto; margin: 0; border-radius: 8px; }
 
+.thumb-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+
+.meal-thumb { position: relative; cursor: zoom-in; }
+
+.thumb-img {
+  width: 68px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  border: 1px solid var(--gold);
+}
+
+.thumb-rating {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  font-size: 10px;
+  border-radius: 999px;
+  padding: 0 6px;
+  line-height: 1.6;
+}
+
+.thumb-none {
+  width: 68px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--paper);
+  border: 1px dashed var(--gold-quiet);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.past-days { margin-top: 8px; }
+.past-days summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--gold-dark);
+  font-size: 15px;
+  user-select: none;
+}
+.past-days[open] summary { margin-bottom: 12px; }
+
 .meal-photo-row { align-items: center; }
 
 /* ---------- Partner cross view ---------- */
@@ -628,6 +676,56 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 .modal-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
 #examen-back.ghost { margin: 0; }
 #examen-next.act-btn { margin: 0; }
+
+/* ---------- Meal lightbox ---------- */
+
+#lightbox {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.88);
+  z-index: 40;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  cursor: zoom-out;
+}
+#lightbox.hidden { display: none; }
+
+.lb-card {
+  max-width: min(680px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: default;
+}
+#lb-img {
+  max-width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+#lb-caption {
+  color: #fff;
+  text-align: center;
+  font-size: 15px;
+}
+#lb-caption strong { color: var(--gold); font-size: 17px; }
+#lb-caption em { display: block; font-style: italic; color: #e6d9b8; margin-top: 4px; }
+
+#lb-close {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 41;
+}
 
 /* ---------- Bottom nav ---------- */
 

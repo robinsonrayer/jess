@@ -99,6 +99,31 @@ function photoTag(src, label){
   return src ? "<img class='meal-photo' src='" + src + "' alt='" + label + "'>" : "";
 }
 
+function mealThumb(m, mi, owner, showNote){
+  return "<span class='meal-thumb' data-owner='" + owner + "' data-mi='" + mi + "' data-note='" + (showNote ? "1" : "0") + "'>" +
+    (m.photo
+      ? "<img class='thumb-img' src='" + m.photo + "' alt='meal'>" +
+        "<span class='thumb-rating'>" + esc(m.rating) + "</span>"
+      : "<span class='thumb-none'>" + esc(m.rating || "meal") + "</span>") +
+    "</span>";
+}
+
+function openLightbox(owner, mi, showNote){
+  const m = state.profiles[owner].meals[mi];
+  if (!m) return;
+  const img = document.getElementById("lb-img");
+  img.src = m.photo || "";
+  img.style.display = m.photo ? "block" : "none";
+  const caption = document.getElementById("lb-caption");
+  caption.innerHTML = "<strong>" + esc(m.rating || "meal") + "</strong> · Day " + m.day +
+    (showNote && m.note ? "<em>" + esc(m.note) + "</em>" : "");
+  document.getElementById("lightbox").classList.remove("hidden");
+}
+
+function closeLightbox(){
+  document.getElementById("lightbox").classList.add("hidden");
+}
+
 function renderLogZone(){
   const zone = document.getElementById("log-zone");
   const p = state.profiles[actor];
@@ -120,24 +145,26 @@ function renderLogZone(){
       "<input type='text' id='meal-note' placeholder='a private note, just for you' autocomplete='off'>";
     if (!todays.length) {
       block += "<p class='feed-empty'>No meal logged today yet.</p>";
+    } else {
+      let grid = "";
+      meals.forEach(function(m, i){
+        if (m.day === state.day) grid += mealThumb(m, i, actor, true);
+      });
+      block += "<div class='thumb-grid'>" + grid + "</div>";
     }
-    todays.forEach(m => {
-      block += "<div class='logged-line'>" + photoTag(m.photo, "meal") +
-        "<span>Meal — " + esc(m.rating) + (m.note ? " <em>" + esc(m.note) + "</em>" : "") + "</span></div>";
-    });
     block += "</div>";
     if (past.length) {
-      block += "<div class='panel'><div class='panel-head'><h3>Past meals</h3></div>";
+      block += "<details class='past-days'><summary>Past meals</summary>";
       const days = [...new Set(past.map(m => m.day))].sort((a, b) => b - a);
       days.forEach(d => {
-        block += "<p class='rubric'>Day " + d + "</p>";
-        past.filter(m => m.day === d).forEach(m => {
-          block += "<div class='logged-line'>" + photoTag(m.photo, "meal") +
-            "<span>" + esc(m.rating || "meal") + (m.note ? " — " + esc(m.note) : "") + "</span></div>";
+        block += "<p class='rubric'>Day " + d + "</p><div class='thumb-grid'>";
+        meals.forEach(function(m, i){
+          if (m.day === d) block += mealThumb(m, i, actor, true);
         });
+        block += "</div>";
       });
       block += "<p class='feed-empty'>Photos are kept for the last 3 days; ratings and notes stay forever.</p>";
-      block += "</div>";
+      block += "</details>";
     }
   } else {
     const logged = todayDone(p, "study");
@@ -192,11 +219,12 @@ function renderCrossZone(){
     if (!inView.length) {
       inner = "<div class='cross-card empty'>Jess hasn't logged a meal yet.</div>";
     } else {
-      inner = inView.slice().reverse().map(m =>
-        "<div class='cross-card'>" + photoTag(m.photo, "Jess's meal") +
-        "<div class='cross-meta'><strong>Meal · " + esc(m.rating || "") + "</strong>" +
-        "<span>" + (m.day === state.day ? "today" : "Day " + m.day) + "</span></div></div>"
-      ).join("");
+      let grid = "";
+      tp.meals.forEach(function(m, i){
+        if (m.day >= state.day - 2) grid += mealThumb(m, i, them, false);
+      });
+      inner = "<div class='cross-card'><div class='cross-meta'><strong>Jess's meals</strong>" +
+        "<span>last 3 days</span></div><div class='thumb-grid'>" + grid + "</div></div>";
     }
   } else {
     const [E, M, H] = tp.difficultyMix;
@@ -395,6 +423,15 @@ function bind(){
   document.getElementById("encourage-btn").addEventListener("click", function(){
     state = engine.encourage(state, actor);
     render();
+  });
+
+  document.addEventListener("click", function(e){
+    const th = e.target.closest ? e.target.closest(".meal-thumb") : null;
+    if (th) {
+      openLightbox(th.dataset.owner, +th.dataset.mi, th.dataset.note === "1");
+      return;
+    }
+    if (e.target.id === "lightbox" || e.target.id === "lb-close") closeLightbox();
   });
 
   document.getElementById("highlight-btn").addEventListener("click", function(){
