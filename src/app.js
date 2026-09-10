@@ -464,6 +464,7 @@ function choose(profile){
   storage.setItem(SESSION_KEY, actor);
   if (first) {
     state = engine.normalize(loadState(storage));
+    state = engine.autoAdvance(state);
     first = false;
   }
   syncFastingFlag();
@@ -472,6 +473,16 @@ function choose(profile){
   render();
   startSync(adoptCloudState);
 }
+
+setInterval(function(){
+  if (!state) return;
+  const next = engine.autoAdvance(state);
+  if (next.day !== state.day) {
+    state = next;
+    syncFastingFlag();
+    commit();
+  }
+}, 60000);
 
 function readPhoto(file){
   if (!file || !file.type.startsWith("image/")) return;
@@ -509,13 +520,6 @@ function bind(){
       switchView(el.dataset.view);
     });
   });
-  document.getElementById("app-advance").addEventListener("click", function(){
-    state = engine.advanceDay(state);
-    syncFastingFlag();
-    mealPhoto = null;
-    commit();
-  });
-
   document.getElementById("log-zone").addEventListener("click", function(e){
     const t = e.target;
     if (t.id === "meal-photo-btn") document.getElementById("meal-photo-input").click();

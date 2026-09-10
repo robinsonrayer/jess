@@ -1,5 +1,6 @@
 export function createEngine(){
   var seed = 20260909;
+  var nowFn = function(){ return new Date(); };
   function rnd(){ seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
   function roll(){ return 8 + Math.floor(rnd() * 8); }
   function doubling(){ return rnd() < 0.10; }
@@ -7,9 +8,28 @@ export function createEngine(){
   var MILESTONES = { 7:25, 14:35, 30:50 };
   function name(actor){ return actor === "jess" ? "Jess" : "Robi"; }
 
+  function todayISO(){
+    var d = nowFn();
+    var m = d.getMonth() + 1;
+    var day = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+  }
+
+  function daysBetween(fromISO, toISO){
+    var a = new Date(fromISO + "T00:00:00");
+    var b = new Date(toISO + "T00:00:00");
+    return Math.round((b - a) / 86400000);
+  }
+
+  function currentDay(s){
+    if (!s || !s.startedAt) return 1;
+    return Math.max(1, daysBetween(s.startedAt, todayISO()) + 1);
+  }
+
   function fresh(){
     return {
       day: 1,
+      startedAt: todayISO(),
       fasting: false,
       profiles: {
         jess: { points:0, meals:[],
@@ -75,6 +95,8 @@ export function createEngine(){
 
   function normalize(s){
     if (!s || !s.profiles) { return fresh(); }
+    if (!s.startedAt) { s.startedAt = todayISO(); }
+    s.day = currentDay(s);
     var f = fresh();
     ["jess", "robi"].forEach(function(k){
       var p = s.profiles[k] || {};
@@ -123,13 +145,15 @@ export function createEngine(){
 
   return {
     setSeed: function(n){ seed = n; },
+    setToday: function(iso){ nowFn = function(){ return new Date(iso + "T12:00:00"); }; },
     fresh: fresh,
     normalize: normalize,
     totalPoints: totalPoints,
+    currentDay: currentDay,
 
-    advanceDay: function(s){
+    autoAdvance: function(s){
       s = clone(s);
-      s.day = s.day + 1;
+      s.day = currentDay(s);
       ["jess", "robi"].forEach(function(k){
         s.profiles[k].meals.forEach(function(m){
           if (m.photo && m.day < s.day - 2) { m.photo = ""; }

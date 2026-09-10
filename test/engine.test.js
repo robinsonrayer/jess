@@ -14,8 +14,12 @@ function memoryStorage(){
 
 function advance(s, n){
   const e = createEngine();
-  for (let i = 0; i < n; i++) s = e.advanceDay(s);
-  return s;
+  const from = new Date(s.startedAt + "T00:00:00");
+  from.setDate(from.getDate() + (s.day - 1) + n);
+  const m = from.getMonth() + 1;
+  const day = from.getDate();
+  e.setToday(from.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day);
+  return e.autoAdvance(s);
 }
 
 test("fresh() seeds the full state shape", () => {
@@ -180,11 +184,11 @@ test("meal: photos are pruned after 3 days, notes are kept forever", () => {
   const e = createEngine();
   let s = e.fresh();
   s = e.logMeal(s, "jess", "Good", "breakfast", "data:1");
-  s = e.advanceDay(s);
+  s = advance(s, 1);
   s = e.logMeal(s, "jess", "Good", "dinner", "data:2");
-  s = e.advanceDay(s);
+  s = advance(s, 1);
   s = e.logMeal(s, "jess", "Good", "lunch", "data:3");
-  s = e.advanceDay(s);
+  s = advance(s, 1);
   s = e.logMeal(s, "jess", "Good", "snack", "data:4");
   assert.equal(s.profiles.jess.meals.length, 4);
   assert.equal(s.profiles.jess.meals[0].photo, "", "day-1 photo dropped at day 4");
@@ -197,7 +201,7 @@ test("meal: photos are pruned after 3 days, notes are kept forever", () => {
 test("meal: within the 3-day window photos survive several advances", () => {
   const e = createEngine();
   let s = e.logMeal(e.fresh(), "jess", "Good", "", "data:1");
-  for (let d = 0; d < 2; d++) s = e.advanceDay(s);
+  for (let d = 0; d < 2; d++) s = advance(s, 1);
   assert.equal(s.profiles.jess.meals[0].photo, "data:1");
 });
 
@@ -213,7 +217,7 @@ test("meal: daily advance logs build a growing streak", () => {
   let s = e.fresh();
   for (let d = 1; d <= 3; d++) {
     s = e.logMeal(s, "jess", "Good");
-    if (d < 3) s = e.advanceDay(s);
+    if (d < 3) s = advance(s, 1);
   }
   assert.equal(s.streaks.health.count, 3);
 });
@@ -283,7 +287,7 @@ test("prayer: second partner same day pays both", () => {
 test("prayer: second partner next day pays nothing (no rollover)", () => {
   const e = createEngine();
   let s = e.pray(e.fresh(), "jess", "button");
-  s = e.advanceDay(s);
+  s = advance(s, 1);
   s = e.pray(s, "robi", "button");
   assert.equal(s.profiles.jess.points, 0);
   assert.equal(s.profiles.robi.points, 0);
@@ -417,7 +421,7 @@ test("streak: a one-day gap burns one freeze and holds the count", () => {
   let s = e.fresh();
   for (let d = 1; d <= 7; d++) {
     s = e.logMeal(s, "jess", "Good");
-    if (d < 7) s = e.advanceDay(s);
+    if (d < 7) s = advance(s, 1);
   }
   assert.equal(s.streaks.health.count, 7);
   assert.equal(s.streaks.health.bank, 1, "milestone banks a freeze");
@@ -432,7 +436,7 @@ test("streak: a wider gap than the bank restarts at 1", () => {
   let s = e.fresh();
   for (let d = 1; d <= 7; d++) {
     s = e.logMeal(s, "jess", "Good");
-    if (d < 7) s = e.advanceDay(s);
+    if (d < 7) s = advance(s, 1);
   }
   assert.equal(s.streaks.health.bank, 1);
   s = advance(s, 5);
@@ -455,7 +459,7 @@ test("streak: milestone banks a freeze (cap 2) with bonus to acting profile", ()
   let s = e.fresh();
   for (let d = 1; d <= 14; d++) {
     s = e.logMeal(s, "jess", "Good");
-    if (d < 14) s = e.advanceDay(s);
+    if (d < 14) s = advance(s, 1);
   }
   assert.equal(s.streaks.health.count, 14);
   assert.equal(s.streaks.health.bank, 2);
@@ -469,7 +473,7 @@ test("streak: 30-day bonus is 50", () => {
   let s = e.fresh();
   for (let d = 1; d <= 30; d++) {
     s = e.studyAction(s, "robi", "pomodoro");
-    if (d < 30) s = e.advanceDay(s);
+    if (d < 30) s = advance(s, 1);
   }
   assert.equal(s.streaks.study.count, 30);
   assert.equal(s.streaks.study.bank, 2);
@@ -483,7 +487,7 @@ test("streak: prayer milestone pays both profiles", () => {
   let s = e.fresh();
   for (let d = 1; d <= 7; d++) {
     s = e.pray(s, "jess", "button");
-    if (d < 7) s = e.advanceDay(s);
+    if (d < 7) s = advance(s, 1);
   }
   assert.equal(s.streaks.prayer.count, 7);
   assert.equal(s.profiles.jess.points, 25);
@@ -541,10 +545,52 @@ test("feed: an explicit flirt message is delivered in the line", () => {
 test("feed: lines are day-tagged", () => {
   const e = createEngine();
   let s = e.logMeal(e.fresh(), "jess", "Good");
-  s = e.advanceDay(s);
+  s = advance(s, 1);
   s = e.studyAction(s, "robi", "problem", "Hard");
   assert.ok(s.feed[0].startsWith("Day 1 — "), s.feed[0]);
   assert.ok(s.feed[1].startsWith("Day 2 — "), s.feed[1]);
+});
+
+/* ----- Auto-advance ----- */
+
+test("day is derived from startedAt, not stored", () => {
+  const e = createEngine();
+  e.setToday("2026-09-10");
+  let s = e.fresh();
+  assert.equal(s.day, 1);
+  s = e.logMeal(s, "jess", "Good");
+  e.setToday("2026-09-13");
+  s = e.autoAdvance(s);
+  assert.equal(s.day, 4, "3 calendar days later is day 4");
+  assert.equal(s.profiles.jess.meals[0].day, 1, "logged on day 1 stays day 1");
+});
+
+test("autoAdvance uses the injected clock", () => {
+  const e = createEngine();
+  e.setToday("2026-09-10");
+  const s = e.fresh();
+  e.setToday("2026-09-11");
+  assert.equal(e.autoAdvance(s).day, 2);
+  e.setToday("2026-09-10");
+  assert.equal(e.autoAdvance(s).day, 1, "same calendar day does not advance");
+});
+
+test("normalize backfills startedAt and derives day for legacy states", () => {
+  const e = createEngine();
+  e.setToday("2026-09-10");
+  const legacy = { day: 99, fasting: false, profiles: { jess: {}, robi: {} },
+    streaks: {}, rewards: [], feed: [] };
+  const s = e.normalize(legacy);
+  assert.equal(s.startedAt, "2026-09-10");
+  assert.equal(s.day, 1, "no startedAt means day 1");
+});
+
+test("startedAt survives clone and is untouched by actions", () => {
+  const e = createEngine();
+  e.setToday("2026-09-10");
+  let s = e.fresh();
+  s = e.keepChastity(s, "jess");
+  assert.equal(s.startedAt, "2026-09-10");
 });
 
 /* ----- Immutability ----- */
