@@ -207,10 +207,10 @@ function renderLogZone(){
       "<div class='meal-photo-row'><button class='act-btn' id='meal-photo-btn'>Add a photo</button>" +
       "<input type='file' id='meal-photo-input' accept='image/*' hidden></div>" +
       "<div id='meal-photo-preview'></div>" +
+      "<input type='text' id='meal-note' placeholder='a note for the encouragement feed' autocomplete='off'>" +
       "<div class='rating-row'><span class='act-btn rating good' data-rating='Good'>Good</span>" +
       "<span class='act-btn rating okay' data-rating='Okay'>Okay</span>" +
-      "<span class='act-btn rating miss' data-rating='Miss'>Miss</span></div>" +
-      "<input type='text' id='meal-note' placeholder='a note for the encouragement feed' autocomplete='off'>";
+      "<span class='act-btn rating miss' data-rating='Miss'>Miss</span></div>";
     if (!todays.length) {
       block += "<p class='feed-empty'>No meal logged today yet.</p>";
     } else {
@@ -241,10 +241,10 @@ function renderLogZone(){
     block += "<div class='panel'><div class='panel-head'><h3>Today's study</h3></div>" +
       "<div class='study-row'><span class='act-btn' id='study-pomodoro'>Pomodoro</span></div>" +
       "<p class='rubric'>or a problem, by difficulty</p>" +
+      "<input type='text' id='study-label' placeholder='a label — visible to Jess' autocomplete='off'>" +
       "<div class='rating-row'><span class='act-btn difficulty easy' data-difficulty='Easy'>Easy</span>" +
       "<span class='act-btn difficulty medium' data-difficulty='Medium'>Medium</span>" +
-      "<span class='act-btn difficulty hard' data-difficulty='Hard'>Hard</span></div>" +
-      "<input type='text' id='study-label' placeholder='a label — visible to Jess' autocomplete='off'>";
+      "<span class='act-btn difficulty hard' data-difficulty='Hard'>Hard</span></div>";
     if (todaysS.length) {
       block += "<div class='study-list'>" + todaysS.map(studyLine).join("") + "</div>";
     }
