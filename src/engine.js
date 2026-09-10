@@ -12,10 +12,10 @@ export function createEngine(){
       day: 1,
       fasting: false,
       profiles: {
-        jess: { points:0, meal:null, mealRating:null, mealNote:null, mealPhoto:null,
+        jess: { points:0, meals:[],
                 study:0, studyLabel:null, prayer:null, fast:null,
                 encouraged:null, highlighted:null, difficultyMix:[0,0,0] },
-        robi: { points:0, meal:null, mealRating:null, mealNote:null, mealPhoto:null,
+        robi: { points:0, meals:[],
                 study:0, studyLabel:null, prayer:null, fast:null,
                 encouraged:null, highlighted:null, difficultyMix:[0,0,0] }
       },
@@ -37,8 +37,8 @@ export function createEngine(){
     return {
       ...s,
       profiles: {
-        jess: { ...s.profiles.jess, difficultyMix: s.profiles.jess.difficultyMix.slice() },
-        robi: { ...s.profiles.robi, difficultyMix: s.profiles.robi.difficultyMix.slice() }
+        jess: { ...s.profiles.jess, meals: s.profiles.jess.meals.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.jess.difficultyMix.slice() },
+        robi: { ...s.profiles.robi, meals: s.profiles.robi.meals.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.robi.difficultyMix.slice() }
       },
       streaks: {
         health:  { ...s.streaks.health },
@@ -78,11 +78,25 @@ export function createEngine(){
     var f = fresh();
     ["jess", "robi"].forEach(function(k){
       var p = s.profiles[k] || {};
+      var meals = Array.isArray(p.meals) ? p.meals.map(function(m){ return { ...m }; }) : [];
+      if (p.meal !== null && p.meal !== undefined) {
+        meals.push({
+          day: p.meal,
+          rating: p.mealRating || null,
+          note: p.mealNote || "",
+          photo: p.mealPhoto || ""
+        });
+      }
       s.profiles[k] = {
         ...f.profiles[k],
         ...p,
+        meals: meals,
         difficultyMix: (p.difficultyMix && p.difficultyMix.length === 3) ? p.difficultyMix : [0,0,0]
       };
+      delete s.profiles[k].meal;
+      delete s.profiles[k].mealRating;
+      delete s.profiles[k].mealNote;
+      delete s.profiles[k].mealPhoto;
     });
     ["health", "study", "prayer"].forEach(function(k){
       s.streaks[k] = { ...f.streaks[k], ...(s.streaks && s.streaks[k]) };
@@ -99,7 +113,14 @@ export function createEngine(){
     totalPoints: totalPoints,
 
     advanceDay: function(s){
-      return { ...s, day: s.day + 1 };
+      s = clone(s);
+      s.day = s.day + 1;
+      ["jess", "robi"].forEach(function(k){
+        s.profiles[k].meals.forEach(function(m){
+          if (m.photo && m.day < s.day - 2) { m.photo = ""; }
+        });
+      });
+      return s;
     },
     setFasting: function(s, on){ return { ...s, fasting: on }; },
 
@@ -112,10 +133,12 @@ export function createEngine(){
       var dbl = doubling();
       if (dbl) total *= 2;
       p.points += total;
-      p.meal = s.day;
-      p.mealRating = rating;
-      if (note !== undefined) p.mealNote = note;
-      if (photo !== undefined) p.mealPhoto = photo;
+      p.meals.push({
+        day: s.day,
+        rating: rating,
+        note: note !== undefined ? note : "",
+        photo: photo !== undefined ? photo : ""
+      });
       var bs = bumpStreak(s, "health", s.day);
       var msg = name(actor) + " logged a meal — " + rating + ", +" + total + " pts" + (dbl ? " (doubled)" : "");
       if (bs.note === "milestone") {
@@ -151,10 +174,12 @@ export function createEngine(){
     },
 
     pray: function(s, actor, via){
-      var p = s.profiles[actor];
-      if (p.prayer === s.day) { return s; }
       s = clone(s);
-      p = s.profiles[actor];
+      var p = s.profiles[actor];
+      if (p.prayer === s.day) {
+        if (via === "examen") { feed(s, name(actor) + " did the examen."); }
+        return s;
+      }
       p.prayer = s.day;
       var bs = bumpStreak(s, "prayer", s.day);
       var msg = name(actor) + " " + (via === "examen" ? "did the examen" : "logged prayer");
@@ -201,7 +226,9 @@ export function createEngine(){
     highlight: function(s, actor){
       s = clone(s);
       var p = s.profiles[actor];
-      var detail = actor === "jess" ? p.mealNote : p.studyLabel;
+      var note = actor === "jess" && p.meals.length
+        ? p.meals[p.meals.length - 1].note : "";
+      var detail = actor === "jess" ? note : p.studyLabel;
       if (!detail) { return s; }
       if (p.highlighted === s.day) { return s; }
       p.highlighted = s.day;

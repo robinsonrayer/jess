@@ -24,7 +24,7 @@ test("fresh() seeds the full state shape", () => {
   assert.equal(s.day, 1);
   assert.equal(s.fasting, false);
   assert.deepEqual(Object.keys(s.profiles).sort(), ["jess", "robi"]);
-  for (const k of ["points", "meal", "mealRating", "mealNote", "mealPhoto", "study", "studyLabel", "prayer", "fast", "encouraged", "highlighted", "difficultyMix"]) {
+  for (const k of ["points", "meals", "study", "studyLabel", "prayer", "fast", "encouraged", "highlighted", "difficultyMix"]) {
     assert.ok(k in s.profiles.jess, "jess has " + k);
     assert.ok(k in s.profiles.robi, "robi has " + k);
   }
@@ -65,9 +65,6 @@ test("normalize() backfills new fields onto a legacy state shape", () => {
   const s = e.normalize(legacy);
   for (const k of ["jess", "robi"]) {
     assert.equal(s.profiles[k].difficultyMix.length, 3);
-    assert.equal(s.profiles[k].mealRating, null);
-    assert.equal(s.profiles[k].mealNote, null);
-    assert.equal(s.profiles[k].mealPhoto, null);
     assert.equal(s.profiles[k].studyLabel, null);
     assert.equal(s.profiles[k].prayer, null);
     assert.equal(s.profiles[k].fast, null);
@@ -75,7 +72,8 @@ test("normalize() backfills new fields onto a legacy state shape", () => {
     assert.equal(s.profiles[k].highlighted, null);
   }
   assert.equal(s.profiles.jess.points, 7);
-  assert.equal(s.profiles.jess.meal, 2);
+  assert.equal(s.profiles.jess.meals.length, 1);
+  assert.deepEqual(s.profiles.jess.meals[0], { day: 2, rating: null, note: "", photo: "" });
   assert.equal(s.profiles.robi.study, 1);
   assert.deepEqual(s.streaks.study, { count:0, bank:0, last:null });
   assert.equal(s.streaks.health.last, 2);
@@ -155,19 +153,59 @@ test("meal: base rolls 8-15 and doubling exists under some seed", () => {
   assert.ok(doubled.feed[0].includes("(doubled)"));
 });
 
-test("meal: note and photo are stored privately and never reach the feed", () => {
+test("meal: note and photo stay on the entry and never reach the feed", () => {
   const e = createEngine();
   const s = e.logMeal(e.fresh(), "jess", "Good", "had a rough lunch", "data:img");
-  assert.equal(s.profiles.jess.mealNote, "had a rough lunch");
-  assert.equal(s.profiles.jess.mealPhoto, "data:img");
+  assert.equal(s.profiles.jess.meals.length, 1);
+  assert.equal(s.profiles.jess.meals[0].day, 1);
+  assert.equal(s.profiles.jess.meals[0].note, "had a rough lunch");
+  assert.equal(s.profiles.jess.meals[0].photo, "data:img");
   assert.ok(s.feed.every(l => !l.includes("rough lunch")), "note is private");
+});
+
+test("meal: each meal is its own entry, all logged the same day", () => {
+  const e = createEngine();
+  let s = e.fresh();
+  s = e.logMeal(s, "jess", "Good", "breakfast", "data:1");
+  s = e.logMeal(s, "jess", "Okay", "lunch", "data:2");
+  s = e.logMeal(s, "jess", "Miss", "", "data:3");
+  assert.equal(s.profiles.jess.meals.length, 3);
+  assert.equal(s.streaks.health.count, 1, "streak still advances once");
+  assert.equal(s.profiles.jess.meals[2].note, "");
+  assert.ok(s.profiles.jess.meals.every(m => m.day === 1));
+  assert.equal(s.feed.filter(l => l.includes("logged a meal")).length, 3);
+});
+
+test("meal: photos are pruned after 3 days, notes are kept forever", () => {
+  const e = createEngine();
+  let s = e.fresh();
+  s = e.logMeal(s, "jess", "Good", "breakfast", "data:1");
+  s = e.advanceDay(s);
+  s = e.logMeal(s, "jess", "Good", "dinner", "data:2");
+  s = e.advanceDay(s);
+  s = e.logMeal(s, "jess", "Good", "lunch", "data:3");
+  s = e.advanceDay(s);
+  s = e.logMeal(s, "jess", "Good", "snack", "data:4");
+  assert.equal(s.profiles.jess.meals.length, 4);
+  assert.equal(s.profiles.jess.meals[0].photo, "", "day-1 photo dropped at day 4");
+  assert.equal(s.profiles.jess.meals[0].note, "breakfast", "note kept");
+  assert.equal(s.profiles.jess.meals[1].photo, "data:2", "day-2 photo kept");
+  assert.equal(s.profiles.jess.meals[2].photo, "data:3");
+  assert.equal(s.profiles.jess.meals[3].photo, "data:4");
+});
+
+test("meal: within the 3-day window photos survive several advances", () => {
+  const e = createEngine();
+  let s = e.logMeal(e.fresh(), "jess", "Good", "", "data:1");
+  for (let d = 0; d < 2; d++) s = e.advanceDay(s);
+  assert.equal(s.profiles.jess.meals[0].photo, "data:1");
 });
 
 test("meal: rating and photo are shared fields by default", () => {
   const e = createEngine();
   const s = e.logMeal(e.fresh(), "jess", "Okay", undefined, "data:img");
-  assert.equal(s.profiles.jess.mealRating, "Okay");
-  assert.equal(s.profiles.jess.mealPhoto, "data:img");
+  assert.equal(s.profiles.jess.meals[0].rating, "Okay");
+  assert.equal(s.profiles.jess.meals[0].photo, "data:img");
 });
 
 test("meal: daily advance logs build a growing streak", () => {
@@ -265,13 +303,18 @@ test("prayer: logging twice same day does not double the streak", () => {
   assert.equal(s.streaks.prayer.count, 1);
 });
 
-test("prayer: a second tap the same day is a no-op, no duplicate feed line", () => {
+test("prayer: a second tap the same day is a no-op unless it is the examen", () => {
   const e = createEngine();
   let s = e.pray(e.fresh(), "robi", "button");
   const lines = s.feed.length;
-  const same = e.pray(s, "robi", "examen");
+  const same = e.pray(s, "robi", "button");
   assert.equal(same.feed.length, lines);
   assert.equal(JSON.stringify(same), JSON.stringify(s));
+  const examen = e.pray(s, "robi", "examen");
+  assert.equal(examen.feed[examen.feed.length - 1], "Day 1 — Robi did the examen.");
+  assert.equal(examen.streaks.prayer.count, 1);
+  assert.equal(examen.profiles.robi.points, s.profiles.robi.points);
+  assert.equal(JSON.stringify(examen.profiles), JSON.stringify(s.profiles));
 });
 
 /* ----- Fasting (ticket 05) ----- */

@@ -106,22 +106,39 @@ function renderLogZone(){
   let block = "";
 
   if (actor === "jess") {
-    const logged = todayDone(p, "meal");
-    block += "<div class='panel'><div class='panel-head'><h3>Today's meal</h3></div>" +
-      "<p class='rubric'>meat and fruit first, light on sweets and packaged stuff</p>";
-    if (logged) {
-      block += "<div class='logged-line'>" + photoTag(p.mealPhoto, "meal") +
-        "<span>Logged — " + esc(p.mealRating) + "</span></div>";
-    } else {
-      block += "<div class='meal-photo-row'><button class='act-btn' id='meal-photo-btn'>Add a photo</button>" +
-        "<input type='file' id='meal-photo-input' accept='image/*' hidden></div>" +
-        "<div id='meal-photo-preview'></div>" +
-        "<div class='rating-row'><span class='act-btn rating good' data-rating='Good'>Good</span>" +
-        "<span class='act-btn rating okay' data-rating='Okay'>Okay</span>" +
-        "<span class='act-btn rating miss' data-rating='Miss'>Miss</span></div>" +
-        "<input type='text' id='meal-note' placeholder='a private note, just for you' autocomplete='off'>";
+    const meals = p.meals || [];
+    const todays = meals.filter(m => m.day === state.day);
+    const past = meals.filter(m => m.day !== state.day);
+    block += "<div class='panel'><div class='panel-head'><h3>Today's meals</h3></div>" +
+      "<p class='rubric'>meat and fruit first, light on sweets and packaged stuff</p>" +
+      "<div class='meal-photo-row'><button class='act-btn' id='meal-photo-btn'>Add a photo</button>" +
+      "<input type='file' id='meal-photo-input' accept='image/*' hidden></div>" +
+      "<div id='meal-photo-preview'></div>" +
+      "<div class='rating-row'><span class='act-btn rating good' data-rating='Good'>Good</span>" +
+      "<span class='act-btn rating okay' data-rating='Okay'>Okay</span>" +
+      "<span class='act-btn rating miss' data-rating='Miss'>Miss</span></div>" +
+      "<input type='text' id='meal-note' placeholder='a private note, just for you' autocomplete='off'>";
+    if (!todays.length) {
+      block += "<p class='feed-empty'>No meal logged today yet.</p>";
     }
+    todays.forEach(m => {
+      block += "<div class='logged-line'>" + photoTag(m.photo, "meal") +
+        "<span>Meal — " + esc(m.rating) + (m.note ? " <em>" + esc(m.note) + "</em>" : "") + "</span></div>";
+    });
     block += "</div>";
+    if (past.length) {
+      block += "<div class='panel'><div class='panel-head'><h3>Past meals</h3></div>";
+      const days = [...new Set(past.map(m => m.day))].sort((a, b) => b - a);
+      days.forEach(d => {
+        block += "<p class='rubric'>Day " + d + "</p>";
+        past.filter(m => m.day === d).forEach(m => {
+          block += "<div class='logged-line'>" + photoTag(m.photo, "meal") +
+            "<span>" + esc(m.rating || "meal") + (m.note ? " — " + esc(m.note) : "") + "</span></div>";
+        });
+      });
+      block += "<p class='feed-empty'>Photos are kept for the last 3 days; ratings and notes stay forever.</p>";
+      block += "</div>";
+    }
   } else {
     const logged = todayDone(p, "study");
     block += "<div class='panel'><div class='panel-head'><h3>Today's study</h3></div>";
@@ -171,11 +188,16 @@ function renderCrossZone(){
 
   let inner = "";
   if (them === "jess") {
-    inner = tp.meal
-      ? "<div class='cross-card'>" + photoTag(tp.mealPhoto, "Jess's meal") +
-        "<div class='cross-meta'><strong>Jess's latest meal</strong>" +
-        "<span>" + esc(tp.mealRating || "") + " · " + (tp.meal === state.day ? "today" : "Day " + tp.meal) + "</span></div></div>"
-      : "<div class='cross-card empty'>Jess hasn't logged a meal yet.</div>";
+    const inView = tp.meals.filter(m => m.day >= state.day - 2);
+    if (!inView.length) {
+      inner = "<div class='cross-card empty'>Jess hasn't logged a meal yet.</div>";
+    } else {
+      inner = inView.slice().reverse().map(m =>
+        "<div class='cross-card'>" + photoTag(m.photo, "Jess's meal") +
+        "<div class='cross-meta'><strong>Meal · " + esc(m.rating || "") + "</strong>" +
+        "<span>" + (m.day === state.day ? "today" : "Day " + m.day) + "</span></div></div>"
+      ).join("");
+    }
   } else {
     const [E, M, H] = tp.difficultyMix;
     const total = E + M + H || 1;
@@ -262,8 +284,10 @@ function drawFeedActs(){
   ];
   document.getElementById("encourage-btn").textContent =
     flirts[Math.floor(Math.random() * flirts.length)];
+  const jessNote = (state.profiles.jess.meals.length &&
+    state.profiles.jess.meals[state.profiles.jess.meals.length - 1].note) || "";
   const canHighlight = actor && (
-    (actor === "jess" && state.profiles.jess.mealNote) ||
+    (actor === "jess" && jessNote) ||
     (actor === "robi" && state.profiles.robi.studyLabel)
   );
   document.getElementById("highlight-btn").classList.toggle("hidden", !canHighlight);
