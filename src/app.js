@@ -137,10 +137,12 @@ function photoTag(src, label){
   return src ? "<img class='meal-photo' src='" + src + "' alt='" + label + "'>" : "";
 }
 
-function mealThumb(m, mi, owner, showNote){
-  return "<span class='meal-thumb' data-owner='" + owner + "' data-mi='" + mi + "' data-note='" + (showNote ? "1" : "0") + "'>" +
+function mealThumb(m, mi, owner, opts){
+  opts = opts || {};
+  return "<span class='meal-thumb' data-owner='" + owner + "' data-mi='" + mi + "'>" +
     (m.photo
       ? "<img class='thumb-img' src='" + m.photo + "' alt='meal'>" +
+        (opts.day ? "<span class='thumb-day'>" + m.day + "</span>" : "") +
         "<span class='thumb-rating'>" + esc(m.rating) + "</span>"
       : "<span class='thumb-none'>" + esc(m.rating || "meal") + "</span>") +
     "</span>";
@@ -186,7 +188,7 @@ function crossStudyCard(entries){
     notes + "</div>";
 }
 
-function openLightbox(owner, mi, showNote){
+function openLightbox(owner, mi){
   const m = state.profiles[owner].meals[mi];
   if (!m) return;
   const img = document.getElementById("lb-img");
@@ -194,7 +196,7 @@ function openLightbox(owner, mi, showNote){
   img.style.display = m.photo ? "block" : "none";
   const caption = document.getElementById("lb-caption");
   caption.innerHTML = "<strong>" + esc(m.rating || "meal") + "</strong> · Day " + m.day +
-    (showNote && m.note ? "<em>" + esc(m.note) + "</em>" : "");
+    (m.note ? "<em>" + esc(m.note) + "</em>" : "");
   document.getElementById("lightbox").classList.remove("hidden");
 }
 
@@ -226,7 +228,7 @@ function renderLogZone(){
     } else {
       let grid = "";
       meals.forEach(function(m, i){
-        if (m.day === state.day) grid += mealThumb(m, i, actor, true);
+        if (m.day === state.day) grid += mealThumb(m, i, actor);
       });
       block += "<div class='thumb-grid'>" + grid + "</div>";
     }
@@ -235,9 +237,9 @@ function renderLogZone(){
       block += "<details class='past-days'><summary>Past meals</summary>";
       const days = [...new Set(past.map(m => m.day))].sort((a, b) => b - a);
       days.forEach(d => {
-        block += "<p class='rubric'>Day " + d + "</p><div class='thumb-grid'>";
+        block += "<div class='thumb-grid'>";
         meals.forEach(function(m, i){
-          if (m.day === d) block += mealThumb(m, i, actor, true);
+          if (m.day === d) block += mealThumb(m, i, actor, { day: true });
         });
         block += "</div>";
       });
@@ -317,15 +319,13 @@ function renderCrossZone(){
       inner = "<div class='cross-card empty'>Jess hasn't logged a meal yet.</div>";
     } else {
       let grid = "";
-      let notes = "";
       tp.meals.forEach(function(m, i){
         if (m.day >= state.day - 2) {
-          grid += mealThumb(m, i, them, true);
-          if (m.note) notes += "<div class='study-line'><span>Day " + m.day + "</span> <em>" + esc(m.note) + "</em></div>";
+          grid += mealThumb(m, i, them, { day: true });
         }
       });
       inner = "<div class='cross-card'><div class='cross-meta'><strong>Jess's meals</strong>" +
-        "<span>last 3 days</span></div><div class='thumb-grid'>" + grid + "</div>" + notes + "</div>";
+        "<span>last 3 days</span></div><div class='thumb-grid'>" + grid + "</div></div>";
     }
   } else {
     inner = crossStudyCard(tp.studies);
@@ -551,7 +551,7 @@ function bind(){
   document.addEventListener("click", function(e){
     const th = e.target.closest ? e.target.closest(".meal-thumb") : null;
     if (th) {
-      openLightbox(th.dataset.owner, +th.dataset.mi, th.dataset.note === "1");
+      openLightbox(th.dataset.owner, +th.dataset.mi);
       return;
     }
     if (e.target.id === "lightbox" || e.target.id === "lb-close") closeLightbox();
