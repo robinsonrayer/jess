@@ -143,6 +143,7 @@ function mealThumb(m, mi, owner, opts){
     (m.photo
       ? "<img class='thumb-img' src='" + m.photo + "' alt='meal'>" +
         (opts.day ? "<span class='thumb-day'>" + m.day + "</span>" : "") +
+        (m.reaction ? "<span class='thumb-reaction'>" + m.reaction + "</span>" : "") +
         "<span class='thumb-rating'>" + esc(m.rating) + "</span>"
       : "<span class='thumb-none'>" + esc(m.rating || "meal") + "</span>") +
     "</span>";
@@ -314,15 +315,24 @@ function renderCrossZone(){
 
   let inner = "";
   if (them === "jess") {
-    const inView = tp.meals.filter(m => m.day >= state.day - 2);
+    const inView = tp.meals.filter(m => m.day >= state.day - 2).sort((a, b) => b.day - a.day);
     if (!inView.length) {
       inner = "<div class='cross-card empty'>Jess hasn't logged a meal yet.</div>";
     } else {
+      const EMOJIS = ["😍","🤤","👍","🔥"];
       let grid = "";
-      tp.meals.forEach(function(m, i){
-        if (m.day >= state.day - 2) {
-          grid += mealThumb(m, i, them, { day: true });
+      inView.forEach(function(m, i){
+        const origIdx = tp.meals.indexOf(m);
+        let picker = "<div class='reaction-row' data-owner='" + them + "' data-mi='" + origIdx + "'>";
+        if (m.reaction) {
+          picker += "<span class='reaction-badge'>" + m.reaction + "</span>";
+        } else {
+          EMOJIS.forEach(function(e){
+            picker += "<span class='reaction-btn' data-emoji='" + e + "'>" + e + "</span>";
+          });
         }
+        picker += "</div>";
+        grid += "<div class='meal-slot'>" + mealThumb(m, origIdx, them, { day: true }) + picker + "</div>";
       });
       inner = "<div class='cross-card'><div class='cross-meta'><strong>Jess's meals</strong>" +
         "<span>last 3 days</span></div><div class='thumb-grid'>" + grid + "</div></div>";
@@ -555,6 +565,17 @@ function bind(){
       return;
     }
     if (e.target.id === "lightbox" || e.target.id === "lb-close") closeLightbox();
+
+    const rb = e.target.closest ? e.target.closest(".reaction-btn") : null;
+    if (rb) {
+      const row = rb.closest(".reaction-row");
+      const emoji = rb.dataset.emoji;
+      const owner = row.dataset.owner;
+      const mi = +row.dataset.mi;
+      state = engine.reactToMeal(state, actor, owner, mi, emoji);
+      commit();
+      return;
+    }
   });
 
   document.getElementById("examen-next").addEventListener("click", function(){

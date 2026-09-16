@@ -100,7 +100,7 @@ export function createEngine(){
     var f = fresh();
     ["jess", "robi"].forEach(function(k){
       var p = s.profiles[k] || {};
-      var meals = Array.isArray(p.meals) ? p.meals.map(function(m){ return { ...m }; }) : [];
+      var meals = Array.isArray(p.meals) ? p.meals.map(function(m){ return { ...m, reaction: m.reaction || null }; }) : [];
       if (p.meal !== null && p.meal !== undefined) {
         meals.push({
           day: p.meal,
@@ -176,7 +176,8 @@ export function createEngine(){
         day: s.day,
         rating: rating,
         note: note !== undefined ? note : "",
-        photo: photo !== undefined ? photo : ""
+        photo: photo !== undefined ? photo : "",
+        reaction: null
       });
       var bs = bumpStreak(s, "health", s.day);
       var msg = name(actor) + " logged a meal — " + rating + ", +" + total + " pts" + (dbl ? " (doubled)" : "");
@@ -186,6 +187,16 @@ export function createEngine(){
         msg += " · 🎈 health streak " + bs.points + " pts" + (bs.freezeGained ? " · +1 freeze" : "");
       }
       feed(s, msg);
+      return s;
+    },
+
+    reactToMeal: function(s, actor, owner, mi, emoji){
+      if (actor === owner) return s;
+      var meals = s.profiles[owner].meals;
+      if (mi < 0 || mi >= meals.length) return s;
+      s = clone(s);
+      s.profiles[owner].meals[mi].reaction = emoji;
+      feed(s, name(actor) + " reacted " + emoji + " to " + name(owner) + "'s meal.");
       return s;
     },
 

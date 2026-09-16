@@ -593,6 +593,23 @@ test("startedAt survives clone and is untouched by actions", () => {
   assert.equal(s.startedAt, "2026-09-10");
 });
 
+test("reactToMeal sets reaction and posts feed, but not from self", () => {
+  const e = createEngine();
+  let s = e.logMeal(e.fresh(), "jess", "Good", "biryani");
+  s = e.reactToMeal(s, "robi", "jess", 0, "😍");
+  assert.equal(s.profiles.jess.meals[0].reaction, "😍");
+  assert.ok(s.feed.some(l => l.includes("reacted 😍")));
+  const before = s;
+  s = e.reactToMeal(s, "jess", "jess", 0, "🔥");
+  assert.equal(s, before, "self-reaction is a no-op");
+});
+
+test("reactToMeal ignores invalid meal index", () => {
+  const e = createEngine();
+  const s = e.reactToMeal(e.fresh(), "robi", "jess", 99, "👍");
+  assert.equal(s.feed.length, 0);
+});
+
 /* ----- Immutability ----- */
 
 test("actions never mutate the input state", () => {
@@ -606,7 +623,8 @@ test("actions never mutate the input state", () => {
     s => e.encourage(s, "jess"),
     s => e.addReward(s, "x", 1),
     s => e.renameReward(s, "r1", "y"),
-    s => e.removeReward(s, "r1")
+    s => e.removeReward(s, "r1"),
+    s => e.reactToMeal(e.logMeal(s, "jess", "Good"), "robi", "jess", 0, "😍")
   ];
   for (const fn of cases) {
     const before = e.fresh();
