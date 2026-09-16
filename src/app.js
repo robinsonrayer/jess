@@ -146,11 +146,8 @@ function mealThumb(m, mi, owner, opts){
   const dayBadge = opts.day ? "<span class='thumb-day'>" + m.day + "</span>" : "";
   return "<span class='meal-thumb' data-owner='" + owner + "' data-mi='" + mi + "'>" +
     (m.photo
-      ? "<img class='thumb-img' src='" + m.photo + "' alt='meal'>" +
-        dayBadge + reactCtrl +
-        "<span class='thumb-rating'>" + esc(m.rating) + "</span>"
-      : dayBadge + reactCtrl +
-        "<span class='thumb-none'>" + esc(m.rating || "meal") + "</span>") +
+      ? "<img class='thumb-img' src='" + m.photo + "' alt='meal'>" + dayBadge + reactCtrl
+      : dayBadge + reactCtrl + "<span class='thumb-none'>" + esc(m.rating || "meal") + "</span>") +
     "</span>";
 }
 
