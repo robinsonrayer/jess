@@ -11,6 +11,7 @@ let actor = null;
 let first = true;
 let mealPhoto = null;
 let hasCloudDoc = false;
+let reactTarget = null;
 
 const SESSION_KEY = "two-to-one.session.v1";
 
@@ -143,7 +144,9 @@ function mealThumb(m, mi, owner, opts){
     (m.photo
       ? "<img class='thumb-img' src='" + m.photo + "' alt='meal'>" +
         (opts.day ? "<span class='thumb-day'>" + m.day + "</span>" : "") +
-        (m.reaction ? "<span class='thumb-reaction'>" + m.reaction + "</span>" : "") +
+        (m.reaction
+          ? "<span class='thumb-reaction'>" + m.reaction + "</span>"
+          : (opts.react ? "<button class='thumb-react' data-owner='" + owner + "' data-mi='" + mi + "' aria-label='react'>+</button>" : "")) +
         "<span class='thumb-rating'>" + esc(m.rating) + "</span>"
       : "<span class='thumb-none'>" + esc(m.rating || "meal") + "</span>") +
     "</span>";
@@ -319,20 +322,10 @@ function renderCrossZone(){
     if (!inView.length) {
       inner = "<div class='cross-card empty'>Jess hasn't logged a meal yet.</div>";
     } else {
-      const EMOJIS = ["😍","🤤","👍","🔥"];
       let grid = "";
       inView.forEach(function(m, i){
         const origIdx = tp.meals.indexOf(m);
-        let picker = "<div class='reaction-row' data-owner='" + them + "' data-mi='" + origIdx + "'>";
-        if (m.reaction) {
-          picker += "<span class='reaction-badge'>" + m.reaction + "</span>";
-        } else {
-          EMOJIS.forEach(function(e){
-            picker += "<span class='reaction-btn' data-emoji='" + e + "'>" + e + "</span>";
-          });
-        }
-        picker += "</div>";
-        grid += "<div class='meal-slot'>" + mealThumb(m, origIdx, them, { day: true }) + picker + "</div>";
+        grid += "<div class='meal-slot'>" + mealThumb(m, origIdx, them, { day: true, react: true }) + "</div>";
       });
       inner = "<div class='cross-card'><div class='cross-meta'><strong>Jess's meals</strong>" +
         "<span>last 3 days</span></div><div class='thumb-grid'>" + grid + "</div></div>";
@@ -559,22 +552,30 @@ function bind(){
   });
 
   document.addEventListener("click", function(e){
+    const reactBtn = e.target.closest ? e.target.closest(".thumb-react") : null;
+    if (reactBtn) {
+      reactTarget = { owner: reactBtn.dataset.owner, mi: +reactBtn.dataset.mi };
+      document.getElementById("react-modal").classList.add("open");
+      return;
+    }
     const th = e.target.closest ? e.target.closest(".meal-thumb") : null;
     if (th) {
       openLightbox(th.dataset.owner, +th.dataset.mi);
       return;
     }
     if (e.target.id === "lightbox" || e.target.id === "lb-close") closeLightbox();
+  });
 
-    const rb = e.target.closest ? e.target.closest(".reaction-btn") : null;
-    if (rb) {
-      const row = rb.closest(".reaction-row");
-      const emoji = rb.dataset.emoji;
-      const owner = row.dataset.owner;
-      const mi = +row.dataset.mi;
-      state = engine.reactToMeal(state, actor, owner, mi, emoji);
-      commit();
+  document.getElementById("react-modal").addEventListener("click", function(e){
+    if (e.target === this) {
+      this.classList.remove("open");
       return;
+    }
+    const opt = e.target.closest(".react-option");
+    if (opt && reactTarget) {
+      state = engine.reactToMeal(state, actor, reactTarget.owner, reactTarget.mi, opt.dataset.emoji);
+      commit();
+      this.classList.remove("open");
     }
   });
 

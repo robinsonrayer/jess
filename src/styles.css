@@ -409,34 +409,60 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 
 .thumb-reaction {
   position: absolute;
-  left: 2px;
-  bottom: 2px;
-  font-size: 14px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 22px;
   line-height: 1;
+  background: rgba(0,0,0,.45);
+  border-radius: 999px;
+  padding: 2px 6px;
 }
+
+.thumb-react {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255,255,255,.9);
+  background: rgba(0,0,0,.45);
+  color: #fff;
+  font-size: 17px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.thumb-react:hover { background: rgba(0,0,0,.7); }
 
 .meal-slot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 
-.reaction-row {
+.react-options {
   display: flex;
-  gap: 2px;
+  gap: 14px;
   justify-content: center;
+  padding: 10px 0 4px;
 }
 
-.reaction-btn {
-  font-size: 16px;
+.react-option {
+  font-size: 30px;
+  line-height: 1;
+  background: none;
+  border: none;
   cursor: pointer;
-  padding: 2px;
-  border-radius: 4px;
-  transition: background .15s;
+  padding: 6px;
+  border-radius: 10px;
+  transition: transform .12s, background .15s;
 }
 
-.reaction-btn:hover { background: var(--gold-light); }
+.react-option:hover { transform: scale(1.25); background: var(--gold-light); }
 
-.reaction-badge {
-  font-size: 16px;
-  padding: 2px 4px;
-}
+.react-card { text-align: center; }
 
 .past-days .thumb-grid { gap: 14px; }
 
