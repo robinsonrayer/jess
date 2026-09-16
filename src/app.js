@@ -140,15 +140,17 @@ function photoTag(src, label){
 
 function mealThumb(m, mi, owner, opts){
   opts = opts || {};
+  const reactCtrl = m.reaction
+    ? "<span class='thumb-reaction'>" + m.reaction + "</span>"
+    : (opts.react ? "<button class='thumb-react' data-owner='" + owner + "' data-mi='" + mi + "' aria-label='react'>+</button>" : "");
+  const dayBadge = opts.day ? "<span class='thumb-day'>" + m.day + "</span>" : "";
   return "<span class='meal-thumb' data-owner='" + owner + "' data-mi='" + mi + "'>" +
     (m.photo
       ? "<img class='thumb-img' src='" + m.photo + "' alt='meal'>" +
-        (opts.day ? "<span class='thumb-day'>" + m.day + "</span>" : "") +
-        (m.reaction
-          ? "<span class='thumb-reaction'>" + m.reaction + "</span>"
-          : (opts.react ? "<button class='thumb-react' data-owner='" + owner + "' data-mi='" + mi + "' aria-label='react'>+</button>" : "")) +
+        dayBadge + reactCtrl +
         "<span class='thumb-rating'>" + esc(m.rating) + "</span>"
-      : "<span class='thumb-none'>" + esc(m.rating || "meal") + "</span>") +
+      : dayBadge + reactCtrl +
+        "<span class='thumb-none'>" + esc(m.rating || "meal") + "</span>") +
     "</span>";
 }
 
