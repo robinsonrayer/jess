@@ -9,7 +9,8 @@ export const firebaseConfig = {
   appId: "1:330214406622:web:1e27c565b10a9eadda854f"
 };
 
-const STATE_DOC_PATH = "couple/state";
+const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+const STATE_DOC_PATH = isLocal ? "couple/state-dev" : "couple/state";
 
 let db = null;
 let docRef = null;
@@ -39,7 +40,8 @@ export async function startSync(handler){
   await signInAnonymously(getAuth(app));
   db = initializeFirestore(app, { localCache: persistentLocalCache() });
 
-  docRef = doc(db, "couple", "state");
+  const [collName, docName] = STATE_DOC_PATH.split("/");
+  docRef = doc(db, collName, docName);
   setDocFn = setDoc;
   const unsubscribe = onSnapshot(docRef, function(snap){
     if (!snap.exists()) {
