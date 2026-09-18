@@ -74,6 +74,16 @@ function adoptCloudState(cloud){
   saveState(state, storage);
 }
 
+function setCloudStatus(status){
+  const banner = document.getElementById("cloud-banner");
+  if (!banner) return;
+  if (status === "offline") {
+    banner.classList.remove("hidden");
+  } else {
+    banner.classList.add("hidden");
+  }
+}
+
 function fmtPoints(n){ return n.toLocaleString("en-IN"); }
 
 function esc(s){
@@ -473,7 +483,7 @@ function choose(profile){
   show("screen-app");
   switchView("today");
   render();
-  startSync(adoptCloudState);
+  startSync(adoptCloudState, setCloudStatus);
 }
 
 setInterval(function(){

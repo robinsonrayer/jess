@@ -650,6 +650,22 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .hidden { display: none; }
 
+.cloud-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 74px;
+  transform: translate(-50%, 0);
+  background: #8a5a2b;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .25);
+  font-size: 14px;
+  max-width: 88vw;
+  z-index: 49;
+  text-align: center;
+}
+
 #feed { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 
 .feedline {
