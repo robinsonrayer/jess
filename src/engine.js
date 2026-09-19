@@ -109,13 +109,14 @@ export function createEngine(){
           photo: p.mealPhoto || ""
         });
       }
-      var studies = Array.isArray(p.studies) ? p.studies.map(function(m){ return { ...m }; }) : [];
+      var studies = Array.isArray(p.studies) ? p.studies.map(function(m){ return { ...m, photo: m.photo || "" }; }) : [];
       if (p.study !== null && p.study !== undefined) {
         studies.push({
           day: p.study,
           type: "pomodoro",
           difficulty: null,
-          label: p.studyLabel || ""
+          label: p.studyLabel || "",
+          photo: ""
         });
       }
       s.profiles[k] = {
@@ -156,6 +157,9 @@ export function createEngine(){
       s.day = currentDay(s);
       ["jess", "robi"].forEach(function(k){
         s.profiles[k].meals.forEach(function(m){
+          if (m.photo && m.day < s.day - 2) { m.photo = ""; }
+        });
+        s.profiles[k].studies.forEach(function(m){
           if (m.photo && m.day < s.day - 2) { m.photo = ""; }
         });
       });
@@ -200,7 +204,7 @@ export function createEngine(){
       return s;
     },
 
-    studyAction: function(s, actor, type, difficulty, label){
+    studyAction: function(s, actor, type, difficulty, label, photo){
       s = clone(s);
       var p = s.profiles[actor];
       var extra = type === "problem" ? (difficulty === "Easy" ? 3 : difficulty === "Medium" ? 5 : 8) : 0;
@@ -212,7 +216,8 @@ export function createEngine(){
         day: s.day,
         type: type,
         difficulty: type === "problem" ? difficulty : null,
-        label: label !== undefined ? label : ""
+        label: label !== undefined ? label : "",
+        photo: photo !== undefined ? photo : ""
       });
       if (type === "problem") {
         p.difficultyMix[difficulty === "Easy" ? 0 : difficulty === "Medium" ? 1 : 2]++;

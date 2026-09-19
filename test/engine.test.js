@@ -79,6 +79,7 @@ test("normalize() backfills new fields onto a legacy state shape", () => {
   assert.equal(s.profiles.robi.studies.length, 1);
   assert.equal(s.profiles.robi.studies[0].day, 1);
   assert.equal(s.profiles.robi.studies[0].type, "pomodoro");
+  assert.equal(s.profiles.robi.studies[0].photo, "", "legacy study entries get an empty photo");
   assert.deepEqual(s.streaks.study, { count:0, bank:0, last:null });
   assert.equal(s.streaks.health.last, 2);
   assert.deepEqual(s.rewards, []);
@@ -258,6 +259,32 @@ test("study: each entry carries its own label by default", () => {
   const s = e.studyAction(e.fresh(), "robi", "problem", "Medium", "two pointers with a twist");
   assert.equal(s.profiles.robi.studies[0].label, "two pointers with a twist");
   assert.equal(s.profiles.robi.studies[0].difficulty, "Medium");
+});
+
+test("study: photo is stored on the entry, empty when absent", () => {
+  const e = createEngine();
+  const withPhoto = e.studyAction(e.fresh(), "robi", "problem", "Hard", "kadane", "data:img");
+  assert.equal(withPhoto.profiles.robi.studies[0].photo, "data:img");
+  const without = e.studyAction(e.fresh(), "robi", "pomodoro");
+  assert.equal(without.profiles.robi.studies[0].photo, "");
+});
+
+test("study: photos are pruned after 3 days, labels kept forever", () => {
+  const e = createEngine();
+  let s = e.fresh();
+  s = e.studyAction(s, "robi", "problem", "Easy", "day1", "data:1");
+  s = advance(s, 1);
+  s = e.studyAction(s, "robi", "problem", "Easy", "day2", "data:2");
+  s = advance(s, 1);
+  s = e.studyAction(s, "robi", "problem", "Easy", "day3", "data:3");
+  s = advance(s, 1);
+  s = e.studyAction(s, "robi", "pomodoro", null, "day4");
+  assert.equal(s.profiles.robi.studies.length, 4);
+  assert.equal(s.profiles.robi.studies[0].photo, "", "day-1 photo dropped at day 4");
+  assert.equal(s.profiles.robi.studies[0].label, "day1", "label kept");
+  assert.equal(s.profiles.robi.studies[1].photo, "data:2", "day-2 photo kept");
+  assert.equal(s.profiles.robi.studies[2].photo, "data:3");
+  assert.equal(s.profiles.robi.studies[3].photo, "");
 });
 
 test("study: feed line is neutral, never judgment-bearing", () => {

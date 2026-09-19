@@ -10,8 +10,10 @@ let state;
 let actor = null;
 let first = true;
 let mealPhoto = null;
+let studyPhoto = null;
 let hasCloudDoc = false;
 let reactTarget = null;
+let partnerBurstSeen = {};
 
 const SESSION_KEY = "two-to-one.session.v1";
 
@@ -72,6 +74,7 @@ function adoptCloudState(cloud){
   syncFastingFlag();
   render();
   saveState(state, storage);
+  checkPartnerBurst();
 }
 
 function setCloudStatus(status){
@@ -161,14 +164,19 @@ function mealThumb(m, mi, owner, opts){
     "</span>";
 }
 
-function studyLine(st){
-  const kind = st.type === "problem" ? "Problem" : "Pomodoro";
-  return "<div class='study-line'><span class='study-kind " + (st.type === "problem" ? "problem" : "pomodoro") + "'>" +
-    esc(kind) + "</span>" + (st.label ? "<em class='study-note'>" + esc(st.label) + "</em>" : "") + "</div>";
+function studyThumb(st, si, owner, opts){
+  opts = opts || {};
+  const dayBadge = opts.day ? "<span class='thumb-day'>" + st.day + "</span>" : "";
+  const kindText = st.type === "problem" ? (st.difficulty || "problem") : "pomodoro";
+  return "<span class='study-thumb meal-thumb' data-owner='" + owner + "' data-si='" + si + "'>" +
+    (st.photo
+      ? "<img class='thumb-img' src='" + st.photo + "' alt='study'>" + dayBadge
+      : dayBadge + "<span class='thumb-none'>" + esc(kindText) + "</span>") +
+    "</span>";
 }
 
 function crossStudyCard(entries){
-  const recent = entries.filter(st => st.day >= state.day - 2);
+  const recent = entries.filter(st => st.day >= state.day - 2).sort((a, b) => b.day - a.day);
   if (!recent.length) return "<div class='cross-card empty'>Robi hasn't logged any study yet.</div>";
   const problems = recent.filter(st => st.type === "problem").length;
   const pomos = recent.length - problems;
@@ -180,16 +188,11 @@ function crossStudyCard(entries){
       "<strong class='pulse-count'>" + (n ? n : "—") + "</strong></div>";
   }
 
-  let notes = "";
-  let noteCount = 0;
-  recent.filter(st => st.label && st.label.trim()).forEach(st => {
-    const kind = st.type === "problem" ? "Problem" : "Pomodoro";
-    notes += "<div class='study-line'><span class='study-kind " + (st.type === "problem" ? "problem" : "pomodoro") + "'>" + kind + "</span>" +
-      "<em class='study-note'>" + esc(st.label) + "</em></div>";
-    noteCount++;
+  let grid = "";
+  recent.forEach(function(st){
+    const origIdx = entries.indexOf(st);
+    grid += "<div class='meal-slot'>" + studyThumb(st, origIdx, "robi", { day: true }) + "</div>";
   });
-  if (notes) notes = "<details class='study-notes'><summary>notes (" + noteCount + ")</summary>" +
-    "<div class='study-list'>" + notes + "</div></details>";
 
   let summary = "";
   if (problems) summary += problems + (problems === 1 ? " problem" : " problems");
@@ -198,18 +201,27 @@ function crossStudyCard(entries){
   return "<div class='cross-card'><div class='cross-meta'><strong>Robi's study</strong><span>last 3 days</span></div>" +
     "<div class='pulse-summary'>" + summary + "</div>" +
     "<div class='pulse'>" + tiles + "</div>" +
-    notes + "</div>";
+    "<div class='thumb-grid'>" + grid + "</div></div>";
 }
 
-function openLightbox(owner, mi){
-  const m = state.profiles[owner].meals[mi];
-  if (!m) return;
+function openLightbox(owner, mi, kind){
+  kind = kind || "meal";
+  const entry = kind === "study"
+    ? state.profiles[owner].studies[mi]
+    : state.profiles[owner].meals[mi];
+  if (!entry) return;
   const img = document.getElementById("lb-img");
-  img.src = m.photo || "";
-  img.style.display = m.photo ? "block" : "none";
+  img.src = entry.photo || "";
+  img.style.display = entry.photo ? "block" : "none";
   const caption = document.getElementById("lb-caption");
-  caption.innerHTML = "<strong>" + esc(m.rating || "meal") + "</strong> · Day " + m.day +
-    (m.note ? "<em>" + esc(m.note) + "</em>" : "");
+  if (kind === "study") {
+    const kindTxt = entry.type === "problem" ? (entry.difficulty || "problem") : "pomodoro";
+    caption.innerHTML = "<strong>" + esc(kindTxt) + "</strong> · Day " + entry.day +
+      (entry.label ? "<em>" + esc(entry.label) + "</em>" : "");
+  } else {
+    caption.innerHTML = "<strong>" + esc(entry.rating || "meal") + "</strong> · Day " + entry.day +
+      (entry.note ? "<em>" + esc(entry.note) + "</em>" : "");
+  }
   document.getElementById("lightbox").classList.remove("hidden");
 }
 
@@ -264,25 +276,33 @@ function renderLogZone(){
     const todaysS = studies.filter(m => m.day === state.day);
     const pastS = studies.filter(m => m.day !== state.day);
     block += "<div class='panel'><div class='panel-head'><h3>Today's study</h3></div>" +
+      "<div class='meal-photo-row'><button class='act-btn' id='study-photo-btn'>Add a photo</button>" +
+      "<input type='file' id='study-photo-input' accept='image/*' hidden></div>" +
+      "<div id='study-photo-preview'></div>" +
       "<div class='study-row'><span class='act-btn' id='study-pomodoro'>Pomodoro</span></div>" +
       "<input type='text' id='study-label' placeholder='a label — visible to Jess' autocomplete='off'>" +
       "<div class='rating-row'><span class='act-btn difficulty easy' data-difficulty='Easy'>Easy</span>" +
       "<span class='act-btn difficulty medium' data-difficulty='Medium'>Medium</span>" +
       "<span class='act-btn difficulty hard' data-difficulty='Hard'>Hard</span></div>";
     if (todaysS.length) {
-      block += "<div class='study-list'>" + todaysS.map(studyLine).join("") + "</div>";
+      let grid = "";
+      studies.forEach(function(st, i){
+        if (st.day === state.day) grid += studyThumb(st, i, actor);
+      });
+      block += "<div class='thumb-grid'>" + grid + "</div>";
     }
     block += "</div>";
     if (pastS.length) {
       block += "<details class='past-days'><summary>Past study</summary>";
       const sdays = [...new Set(pastS.map(m => m.day))].sort((a, b) => b - a);
       sdays.forEach(d => {
-        block += "<p class='rubric'>Day " + d + "</p><div class='study-list'>";
-        pastS.forEach(function(st){
-          if (st.day === d) block += studyLine(st);
+        block += "<div class='thumb-grid'>";
+        studies.forEach(function(st, i){
+          if (st.day === d) block += studyThumb(st, i, actor, { day: true });
         });
         block += "</div>";
       });
+      block += "<p class='feed-empty'>Photos are kept for the last 3 days; labels stay forever.</p>";
       block += "</details>";
     }
   }
@@ -479,6 +499,7 @@ function choose(profile){
     state = engine.autoAdvance(state);
     first = false;
   }
+  setupNotifications();
   syncFastingFlag();
   show("screen-app");
   switchView("today");
@@ -494,9 +515,21 @@ setInterval(function(){
     syncFastingFlag();
     commit();
   }
+  checkNotifs();
 }, 60000);
 
-function readPhoto(file){
+function readPhoto(file, kind){
+  kind = kind || "meal";
+  const isStudy = kind === "study";
+  const apply = function(data){
+    if (isStudy) {
+      studyPhoto = data;
+    } else {
+      mealPhoto = data;
+    }
+    const prev = document.getElementById(isStudy ? "study-photo-preview" : "meal-photo-preview");
+    if (prev) prev.innerHTML = photoTag(data, isStudy ? "study photo" : "meal photo");
+  };
   if (!file) return;
   if (typeof createImageBitmap === "function") {
     createImageBitmap(file).then(function(bitmap){
@@ -507,25 +540,23 @@ function readPhoto(file){
         c.width = Math.round(bitmap.width * scale);
         c.height = Math.round(bitmap.height * scale);
         c.getContext("2d").drawImage(bitmap, 0, 0, c.width, c.height);
-        mealPhoto = c.toDataURL("image/jpeg", 0.6);
-        const prev = document.getElementById("meal-photo-preview");
-        if (prev) prev.innerHTML = photoTag(mealPhoto, "meal photo");
+        apply(c.toDataURL("image/jpeg", 0.6));
       } catch (err) {
-        photoFailed("couldn't process that photo, try another");
+        photoFailed("couldn't process that photo, try another", kind);
       }
     }).catch(function(){
-      photoFailed("couldn't open that photo, try another");
+      photoFailed("couldn't open that photo, try another", kind);
     });
     return;
   }
   const reader = new FileReader();
   reader.onerror = function(){
-    photoFailed("couldn't read that photo, try again");
+    photoFailed("couldn't read that photo, try again", kind);
   };
   reader.onload = function(e){
     const img = new Image();
     img.onerror = function(){
-      photoFailed("couldn't open that photo, try another");
+      photoFailed("couldn't open that photo, try another", kind);
     };
     img.onload = function(){
       try {
@@ -535,11 +566,9 @@ function readPhoto(file){
         c.width = Math.round(img.width * scale);
         c.height = Math.round(img.height * scale);
         c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-        mealPhoto = c.toDataURL("image/jpeg", 0.6);
-        const prev = document.getElementById("meal-photo-preview");
-        if (prev) prev.innerHTML = photoTag(mealPhoto, "meal photo");
+        apply(c.toDataURL("image/jpeg", 0.6));
       } catch (err) {
-        photoFailed("couldn't process that photo, try another");
+        photoFailed("couldn't process that photo, try another", kind);
       }
     };
     img.src = e.target.result;
@@ -547,11 +576,126 @@ function readPhoto(file){
   reader.readAsDataURL(file);
 }
 
-function photoFailed(msg){
-  mealPhoto = null;
-  const prev = document.getElementById("meal-photo-preview");
+function photoFailed(msg, kind){
+  kind = kind || "meal";
+  if (kind === "study") {
+    studyPhoto = null;
+  } else {
+    mealPhoto = null;
+  }
+  const prev = document.getElementById(kind === "study" ? "study-photo-preview" : "meal-photo-preview");
   if (prev) prev.innerHTML = "";
   showToast(msg);
+}
+
+/* ----- Serverless notifications (B) ----- */
+
+const NOTIF_MILESTONES = [7, 14, 30];
+
+function notifSupported(){
+  return typeof Notification !== "undefined" && "serviceWorker" in navigator;
+}
+
+function notifGranted(){
+  return notifSupported() && Notification.permission === "granted";
+}
+
+function notifFired(tag){
+  return storage.getItem("two-to-one.notif." + tag + "." + state.day) === "1";
+}
+
+function markNotifFired(tag){
+  storage.setItem("two-to-one.notif." + tag + "." + state.day, "1");
+}
+
+function notify(tag, title, body){
+  if (!state || !notifGranted() || notifFired(tag)) return;
+  markNotifFired(tag);
+  const payload = { title: title, body: body, tag: tag };
+  const sw = navigator.serviceWorker;
+  if (sw && sw.controller) {
+    sw.controller.postMessage(payload);
+    return;
+  }
+  try {
+    new Notification(title, { body: body, tag: tag });
+  } catch (e) { /* best effort */ }
+}
+
+function setupNotifications(){
+  if (!notifSupported()) return;
+  if (Notification.permission === "default") {
+    Notification.requestPermission().catch(function(){ /* keep quiet */ });
+  }
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.register("sw.js").catch(function(){ /* offline ok */ });
+  }
+}
+
+function todayLogged(p, field){
+  if (field === "meals") return p.meals.some(m => m.day === state.day);
+  if (field === "studies") return p.studies.some(m => m.day === state.day);
+  return p[field] === state.day;
+}
+
+function checkNotifs(){
+  if (!state || !actor || !notifGranted()) return;
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const me = state.profiles[actor];
+  const nameOf = actor === "jess" ? "Jess" : "Robi";
+
+  /* T1 — streak at risk, 21:30 window */
+  if (mins >= 1275 && mins <= 1305) {
+    const atRisk = [];
+    if (actor === "jess") {
+      if (!todayLogged(me, "meals")) atRisk.push("health: no meal logged yet today");
+    } else {
+      if (!todayLogged(me, "studies")) atRisk.push("study: nothing logged yet today");
+    }
+    if (!todayLogged(me, "prayer")) atRisk.push("prayer: not prayed together yet");
+    if (atRisk.length) {
+      notify("at-risk", nameOf + " — day " + state.day + " is still open",
+        atRisk.join(" · ") + ". A few minutes keeps the streak safe. ❤");
+    }
+  }
+
+  /* T2 — milestone chase, any time after 8pm */
+  if (mins >= 1200) {
+    const chase = [];
+    const near = function(streakId, label){
+      const c = state.streaks[streakId].count;
+      if (NOTIF_MILESTONES.indexOf(c + 1) !== -1) chase.push(label + " streak is " + c + " — one more day to " + (c + 1));
+    };
+    near("health", "health");
+    near("study", "study");
+    near("prayer", "prayer");
+    if (chase.length) {
+      notify("milestone", nameOf + " — one more day",
+        chase.join(" · ") + ". Tomorrow makes the milestone. You've got this. ✨");
+    }
+  }
+
+  /* T3 — daily close, 21:45 window */
+  if (mins >= 1305 && mins <= 1345) {
+    notify("close", "Day " + state.day + " is closing",
+      nameOf + ", here's the day: " + fmtPoints(state.profiles.jess.points) + " (Jess) · " +
+      fmtPoints(state.profiles.robi.points) + " (Robi) shared points. Rest well, love. 🌙");
+  }
+}
+
+function checkPartnerBurst(){
+  if (!state || !actor || !notifGranted()) return;
+  const them = other(actor);
+  const theirName = them === "jess" ? "Jess" : "Robi";
+  const list = them === "jess" ? state.profiles.jess.meals : state.profiles.robi.studies;
+  const todayCount = list.filter(x => x.day === state.day).length;
+  const seen = partnerBurstSeen[them];
+  if (seen && seen.day === state.day && todayCount > seen.count) {
+    notify("burst", theirName + " is on a roll today 💪",
+      theirName + " just logged " + (them === "jess" ? "a meal" : "study") + " — cheer them on.");
+  }
+  partnerBurstSeen[them] = { day: state.day, count: todayCount };
 }
 
 function bind(){
@@ -572,24 +716,31 @@ function bind(){
   document.getElementById("log-zone").addEventListener("click", function(e){
     const t = e.target;
     if (t.id === "meal-photo-btn") document.getElementById("meal-photo-input").click();
+    if (t.id === "study-photo-btn") document.getElementById("study-photo-input").click();
     if (t.id === "examen-btn") openExamen();
     if (t.id === "pray-btn") { state = engine.pray(state, actor, "button"); commit(); }
     if (t.id === "fast-btn") { state = engine.keepFast(state, actor); commit(); }
     if (t.id === "chastity-btn") { state = engine.keepChastity(state, actor); commit(); }
-    if (t.id === "study-pomodoro") { state = engine.studyAction(state, actor, "pomodoro", null, labelVal()); commit(); }
+    if (t.id === "study-pomodoro") {
+      state = engine.studyAction(state, actor, "pomodoro", null, labelVal(), studyPhoto || undefined);
+      studyPhoto = null;
+      commit();
+    }
     if (t.dataset.rating) {
       state = engine.logMeal(state, actor, t.dataset.rating, noteVal(), mealPhoto || undefined);
       mealPhoto = null;
       commit();
     }
     if (t.dataset.difficulty) {
-      state = engine.studyAction(state, actor, "problem", t.dataset.difficulty, labelVal());
+      state = engine.studyAction(state, actor, "problem", t.dataset.difficulty, labelVal(), studyPhoto || undefined);
+      studyPhoto = null;
       commit();
     }
   });
 
   document.getElementById("log-zone").addEventListener("change", function(e){
-    if (e.target.id === "meal-photo-input") readPhoto(e.target.files[0]);
+    if (e.target.id === "meal-photo-input") readPhoto(e.target.files[0], "meal");
+    if (e.target.id === "study-photo-input") readPhoto(e.target.files[0], "study");
   });
 
   document.getElementById("encourage-btn").addEventListener("click", function(){
@@ -602,6 +753,11 @@ function bind(){
     if (reactBtn) {
       reactTarget = { owner: reactBtn.dataset.owner, mi: +reactBtn.dataset.mi };
       document.getElementById("react-modal").classList.add("open");
+      return;
+    }
+    const st = e.target.closest ? e.target.closest(".study-thumb") : null;
+    if (st) {
+      openLightbox(st.dataset.owner, +st.dataset.si, "study");
       return;
     }
     const th = e.target.closest ? e.target.closest(".meal-thumb") : null;
