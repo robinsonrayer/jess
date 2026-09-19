@@ -497,24 +497,61 @@ setInterval(function(){
 }, 60000);
 
 function readPhoto(file){
-  if (!file || !file.type.startsWith("image/")) return;
+  if (!file) return;
+  if (typeof createImageBitmap === "function") {
+    createImageBitmap(file).then(function(bitmap){
+      try {
+        const max = 480;
+        const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(bitmap.width * scale);
+        c.height = Math.round(bitmap.height * scale);
+        c.getContext("2d").drawImage(bitmap, 0, 0, c.width, c.height);
+        mealPhoto = c.toDataURL("image/jpeg", 0.6);
+        const prev = document.getElementById("meal-photo-preview");
+        if (prev) prev.innerHTML = photoTag(mealPhoto, "meal photo");
+      } catch (err) {
+        photoFailed("couldn't process that photo, try another");
+      }
+    }).catch(function(){
+      photoFailed("couldn't open that photo, try another");
+    });
+    return;
+  }
   const reader = new FileReader();
+  reader.onerror = function(){
+    photoFailed("couldn't read that photo, try again");
+  };
   reader.onload = function(e){
     const img = new Image();
+    img.onerror = function(){
+      photoFailed("couldn't open that photo, try another");
+    };
     img.onload = function(){
-      const max = 720;
-      const scale = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement("canvas");
-      c.width = Math.round(img.width * scale);
-      c.height = Math.round(img.height * scale);
-      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-      mealPhoto = c.toDataURL("image/jpeg", 0.75);
-      const prev = document.getElementById("meal-photo-preview");
-      if (prev) prev.innerHTML = photoTag(mealPhoto, "meal photo");
+      try {
+        const max = 480;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        mealPhoto = c.toDataURL("image/jpeg", 0.6);
+        const prev = document.getElementById("meal-photo-preview");
+        if (prev) prev.innerHTML = photoTag(mealPhoto, "meal photo");
+      } catch (err) {
+        photoFailed("couldn't process that photo, try another");
+      }
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+function photoFailed(msg){
+  mealPhoto = null;
+  const prev = document.getElementById("meal-photo-preview");
+  if (prev) prev.innerHTML = "";
+  showToast(msg);
 }
 
 function bind(){
