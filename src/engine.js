@@ -33,10 +33,10 @@ export function createEngine(){
       fasting: false,
       profiles: {
         jess: { points:0, meals:[],
-                studies:[], prayer:null, fast:null, chastity:[],
+                studies:[], prayer:null, fast:null,
                 difficultyMix:[0,0,0] },
         robi: { points:0, meals:[],
-                studies:[], prayer:null, fast:null, chastity:[],
+                studies:[], prayer:null, fast:null,
                 difficultyMix:[0,0,0] }
       },
       streaks: {
@@ -57,8 +57,8 @@ export function createEngine(){
     return {
       ...s,
       profiles: {
-        jess: { ...s.profiles.jess, meals: s.profiles.jess.meals.map(function(m){ return { ...m }; }), studies: s.profiles.jess.studies.map(function(m){ return { ...m }; }), chastity: s.profiles.jess.chastity.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.jess.difficultyMix.slice() },
-        robi: { ...s.profiles.robi, meals: s.profiles.robi.meals.map(function(m){ return { ...m }; }), studies: s.profiles.robi.studies.map(function(m){ return { ...m }; }), chastity: s.profiles.robi.chastity.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.robi.difficultyMix.slice() }
+        jess: { ...s.profiles.jess, meals: s.profiles.jess.meals.map(function(m){ return { ...m }; }), studies: s.profiles.jess.studies.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.jess.difficultyMix.slice() },
+        robi: { ...s.profiles.robi, meals: s.profiles.robi.meals.map(function(m){ return { ...m }; }), studies: s.profiles.robi.studies.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.robi.difficultyMix.slice() }
       },
       streaks: {
         health:  { ...s.streaks.health },
@@ -124,7 +124,6 @@ export function createEngine(){
         ...p,
         meals: meals,
         studies: studies,
-        chastity: Array.isArray(p.chastity) ? p.chastity.map(function(m){ return { ...m }; }) : [],
         difficultyMix: (p.difficultyMix && p.difficultyMix.length === 3) ? p.difficultyMix : [0,0,0]
       };
       delete s.profiles[k].meal;
@@ -133,6 +132,7 @@ export function createEngine(){
       delete s.profiles[k].mealPhoto;
       delete s.profiles[k].study;
       delete s.profiles[k].studyLabel;
+      delete s.profiles[k].chastity;
       delete s.profiles[k].highlighted;
       delete s.profiles[k].encouraged;
     });
@@ -278,15 +278,6 @@ export function createEngine(){
       s = clone(s);
       var other = actor === "jess" ? "Robi" : "Jess";
       feed(s, name(actor) + " sent " + other + " " + (message || "encouragement."));
-      return s;
-    },
-
-    keepChastity: function(s, actor){
-      s = clone(s);
-      var p = s.profiles[actor];
-      if (p.chastity.some(function(c){ return c.day === s.day; })) { return s; }
-      p.chastity.push({ day: s.day });
-      feed(s, name(actor) + " kept chastity today.");
       return s;
     },
 

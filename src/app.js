@@ -97,8 +97,6 @@ function other(i){ return i === "jess" ? "robi" : "jess"; }
 
 function todayDone(p, field){ return p[field] === state.day; }
 
-function chastityDone(p){ return p.chastity && p.chastity.some(function(c){ return c.day === state.day; }); }
-
 /* ----- Reward catalog (ticket 07) ----- */
 
 function rewardRow(r, t){
@@ -315,14 +313,6 @@ function renderLogZone(){
   }
   block += "</div>";
 
-  block += "<div class='panel chastity-panel'><div class='panel-head'><h3>Chastity</h3></div>";
-  if (chastityDone(p)) {
-    block += "<span class='prayed-chip'>kept chastity today ✓</span>";
-  } else {
-    block += "<span class='act-btn' id='chastity-btn'>We stayed chaste today</span>";
-  }
-  block += "</div>";
-
   if (state.fasting) {
     block += "<div class='panel fasting'><div class='panel-head'><h3>Fasting</h3></div>";
     if (todayDone(p, "fast")) {
@@ -463,12 +453,9 @@ let pendingFlirt = "encouragement.";
 function drawFeedActs(){
   const score = dayScore(other(actor));
   let tier = score >= 5 ? 2 : score >= 2 ? 1 : 0;
-  const them = state.profiles[other(actor)];
-  const keptYesterday = them.chastity && them.chastity.some(function(c){ return c.day === state.day - 1; });
-  if (!keptYesterday) tier = 0;
   pendingFlirt = FLIRT_TIERS[tier][Math.floor(Math.random() * FLIRT_TIERS[tier].length)];
   document.getElementById("encourage-btn").textContent = "Send " + pendingFlirt;
-  document.getElementById("flirt-hint").textContent = keptYesterday ? FLIRT_HINTS[tier] : "— chastity not kept yesterday; stay tender";
+  document.getElementById("flirt-hint").textContent = FLIRT_HINTS[tier];
 }
 
 function boot(){
@@ -720,7 +707,6 @@ function bind(){
     if (t.id === "examen-btn") openExamen();
     if (t.id === "pray-btn") { state = engine.pray(state, actor, "button"); commit(); }
     if (t.id === "fast-btn") { state = engine.keepFast(state, actor); commit(); }
-    if (t.id === "chastity-btn") { state = engine.keepChastity(state, actor); commit(); }
     if (t.id === "study-pomodoro") {
       state = engine.studyAction(state, actor, "pomodoro", null, labelVal(), studyPhoto || undefined);
       studyPhoto = null;
