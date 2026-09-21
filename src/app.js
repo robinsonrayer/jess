@@ -177,7 +177,7 @@ function studyThumb(st, si, owner, opts){
 }
 
 function crossStudyCard(entries){
-  const recent = entries.filter(st => st.day >= state.day - 2).sort((a, b) => b.day - a.day);
+  const recent = entries.filter(st => st.day >= state.day - 2).reverse();
   if (!recent.length) return "<div class='cross-card empty'>Robi hasn't logged any study yet.</div>";
   const problems = recent.filter(st => st.type === "problem").length;
   const pomos = recent.length - problems;
@@ -253,8 +253,9 @@ function renderLogZone(){
       block += "<p class='feed-empty'>No meal logged today yet.</p>";
     } else {
       let grid = "";
-      meals.forEach(function(m, i){
-        if (m.day === state.day) grid += mealThumb(m, i, actor);
+      todays.slice().reverse().forEach(function(m){
+        const i = meals.indexOf(m);
+        grid += mealThumb(m, i, actor);
       });
       block += "<div class='thumb-grid'>" + grid + "</div>";
     }
@@ -264,8 +265,11 @@ function renderLogZone(){
       const days = [...new Set(past.map(m => m.day))].sort((a, b) => b - a);
       days.forEach(d => {
         block += "<div class='thumb-grid'>";
-        meals.forEach(function(m, i){
-          if (m.day === d) block += mealThumb(m, i, actor, { day: true });
+        meals.slice().reverse().forEach(function(m){
+          if (m.day === d) {
+            const i = meals.indexOf(m);
+            block += mealThumb(m, i, actor, { day: true });
+          }
         });
         block += "</div>";
       });
@@ -287,8 +291,9 @@ function renderLogZone(){
       "<span class='act-btn difficulty hard' data-difficulty='Hard'>Hard</span></div>";
     if (todaysS.length) {
       let grid = "";
-      studies.forEach(function(st, i){
-        if (st.day === state.day) grid += studyThumb(st, i, actor);
+      todaysS.slice().reverse().forEach(function(st){
+        const i = studies.indexOf(st);
+        grid += studyThumb(st, i, actor);
       });
       block += "<div class='thumb-grid'>" + grid + "</div>";
     }
@@ -298,8 +303,11 @@ function renderLogZone(){
       const sdays = [...new Set(pastS.map(m => m.day))].sort((a, b) => b - a);
       sdays.forEach(d => {
         block += "<div class='thumb-grid'>";
-        studies.forEach(function(st, i){
-          if (st.day === d) block += studyThumb(st, i, actor, { day: true });
+        studies.slice().reverse().forEach(function(st){
+          if (st.day === d) {
+            const i = studies.indexOf(st);
+            block += studyThumb(st, i, actor, { day: true });
+          }
         });
         block += "</div>";
       });
@@ -340,7 +348,7 @@ function renderCrossZone(){
 
   let inner = "";
   if (them === "jess") {
-    const inView = tp.meals.filter(m => m.day >= state.day - 2).sort((a, b) => b.day - a.day);
+    const inView = tp.meals.filter(m => m.day >= state.day - 2).reverse();
     if (!inView.length) {
       inner = "<div class='cross-card empty'>Jess hasn't logged a meal yet.</div>";
     } else {
