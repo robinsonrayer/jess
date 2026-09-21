@@ -520,6 +520,33 @@ function readPhoto(file, kind){
     const prev = document.getElementById(isStudy ? "study-photo-preview" : "meal-photo-preview");
     if (prev) prev.innerHTML = photoTag(data, isStudy ? "study photo" : "meal photo");
   };
+  const readViaImage = function(){
+    const reader = new FileReader();
+    reader.onerror = function(){
+      photoFailed("couldn't read that photo, try again", kind);
+    };
+    reader.onload = function(e){
+      const img = new Image();
+      img.onerror = function(){
+        photoFailed("couldn't open that photo, try another", kind);
+      };
+      img.onload = function(){
+        try {
+          const max = 480;
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          const c = document.createElement("canvas");
+          c.width = Math.round(img.width * scale);
+          c.height = Math.round(img.height * scale);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          apply(c.toDataURL("image/jpeg", 0.6));
+        } catch (err) {
+          photoFailed("couldn't process that photo, try another", kind);
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
   if (!file) return;
   if (typeof createImageBitmap === "function") {
     createImageBitmap(file).then(function(bitmap){
@@ -532,38 +559,14 @@ function readPhoto(file, kind){
         c.getContext("2d").drawImage(bitmap, 0, 0, c.width, c.height);
         apply(c.toDataURL("image/jpeg", 0.6));
       } catch (err) {
-        photoFailed("couldn't process that photo, try another", kind);
+        readViaImage();
       }
     }).catch(function(){
-      photoFailed("couldn't open that photo, try another", kind);
+      readViaImage();
     });
     return;
   }
-  const reader = new FileReader();
-  reader.onerror = function(){
-    photoFailed("couldn't read that photo, try again", kind);
-  };
-  reader.onload = function(e){
-    const img = new Image();
-    img.onerror = function(){
-      photoFailed("couldn't open that photo, try another", kind);
-    };
-    img.onload = function(){
-      try {
-        const max = 480;
-        const scale = Math.min(1, max / Math.max(img.width, img.height));
-        const c = document.createElement("canvas");
-        c.width = Math.round(img.width * scale);
-        c.height = Math.round(img.height * scale);
-        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-        apply(c.toDataURL("image/jpeg", 0.6));
-      } catch (err) {
-        photoFailed("couldn't process that photo, try another", kind);
-      }
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  readViaImage();
 }
 
 function photoFailed(msg, kind){
