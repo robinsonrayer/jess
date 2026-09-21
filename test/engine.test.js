@@ -79,6 +79,7 @@ test("normalize() backfills new fields onto a legacy state shape", () => {
   assert.equal(s.profiles.robi.studies[0].day, 1);
   assert.equal(s.profiles.robi.studies[0].type, "pomodoro");
   assert.equal(s.profiles.robi.studies[0].photo, "", "legacy study entries get an empty photo");
+  assert.equal(s.profiles.robi.studies[0].reaction, null, "legacy study entries get a null reaction");
   assert.deepEqual(s.streaks.study, { count:0, bank:0, last:null });
   assert.equal(s.streaks.health.last, 2);
   assert.deepEqual(s.rewards, []);
@@ -591,6 +592,34 @@ test("reactToMeal ignores invalid meal index", () => {
   assert.equal(s.feed.length, 0);
 });
 
+test("reactToStudy sets a reaction on a study entry and posts feed", () => {
+  const e = createEngine();
+  let s = e.studyAction(e.fresh(), "robi", "problem", "Hard", "kadane");
+  s = e.reactToStudy(s, "jess", "robi", 0, "🔥");
+  assert.equal(s.profiles.robi.studies[0].reaction, "🔥");
+  assert.ok(s.feed.some(l => l.includes("reacted 🔥 to Robi's study")));
+  const before = s;
+  s = e.reactToStudy(s, "robi", "robi", 0, "😍");
+  assert.equal(s, before, "self-reaction is a no-op");
+});
+
+test("reactToStudy ignores invalid study index", () => {
+  const e = createEngine();
+  const s = e.reactToStudy(e.fresh(), "jess", "robi", 99, "👍");
+  assert.equal(s.feed.length, 0);
+});
+
+test("study entries carry a reaction field, backfilled by normalize", () => {
+  const e = createEngine();
+  const s = e.studyAction(e.fresh(), "robi", "pomodoro", null, "");
+  assert.equal(s.profiles.robi.studies[0].reaction, null);
+  const legacy = { day: 1, startedAt: "2026-09-10", fasting: false,
+    profiles: { jess: { studies: [{ day: 1, type: "problem", difficulty: "Easy", label: "x" }] }, robi: {} },
+    streaks: {}, rewards: [], feed: [] };
+  const n = e.normalize(legacy);
+  assert.equal(n.profiles.jess.studies[0].reaction, null);
+});
+
 /* ----- Immutability ----- */
 
 test("actions never mutate the input state", () => {
@@ -604,7 +633,8 @@ test("actions never mutate the input state", () => {
     s => e.addReward(s, "x", 1),
     s => e.renameReward(s, "r1", "y"),
     s => e.removeReward(s, "r1"),
-    s => e.reactToMeal(e.logMeal(s, "jess", "Good"), "robi", "jess", 0, "😍")
+    s => e.reactToMeal(e.logMeal(s, "jess", "Good"), "robi", "jess", 0, "😍"),
+    s => e.reactToStudy(e.studyAction(s, "robi", "problem", "Hard", "x"), "jess", "robi", 0, "🔥")
   ];
   for (const fn of cases) {
     const before = e.fresh();

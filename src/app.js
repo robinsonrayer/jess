@@ -164,12 +164,15 @@ function mealThumb(m, mi, owner, opts){
 
 function studyThumb(st, si, owner, opts){
   opts = opts || {};
+  const reactCtrl = st.reaction
+    ? "<span class='thumb-reaction'>" + st.reaction + "</span>"
+    : (opts.react ? "<button class='thumb-react' data-owner='" + owner + "' data-si='" + si + "' aria-label='react'>+</button>" : "");
   const dayBadge = opts.day ? "<span class='thumb-day'>" + st.day + "</span>" : "";
   const kindText = st.type === "problem" ? (st.difficulty || "problem") : "pomodoro";
   return "<span class='study-thumb meal-thumb' data-owner='" + owner + "' data-si='" + si + "'>" +
     (st.photo
-      ? "<img class='thumb-img' src='" + st.photo + "' alt='study'>" + dayBadge
-      : dayBadge + "<span class='thumb-none'>" + esc(kindText) + "</span>") +
+      ? "<img class='thumb-img' src='" + st.photo + "' alt='study'>" + dayBadge + reactCtrl
+      : dayBadge + reactCtrl + "<span class='thumb-none'>" + esc(kindText) + "</span>") +
     "</span>";
 }
 
@@ -189,7 +192,7 @@ function crossStudyCard(entries){
   let grid = "";
   recent.forEach(function(st){
     const origIdx = entries.indexOf(st);
-    grid += "<div class='meal-slot'>" + studyThumb(st, origIdx, "robi", { day: true }) + "</div>";
+    grid += "<div class='meal-slot'>" + studyThumb(st, origIdx, "robi", { day: true, react: true }) + "</div>";
   });
 
   let summary = "";
@@ -737,7 +740,13 @@ function bind(){
   document.addEventListener("click", function(e){
     const reactBtn = e.target.closest ? e.target.closest(".thumb-react") : null;
     if (reactBtn) {
-      reactTarget = { owner: reactBtn.dataset.owner, mi: +reactBtn.dataset.mi };
+      const owner = reactBtn.dataset.owner;
+      const isStudy = reactBtn.dataset.si !== undefined;
+      const idx = isStudy ? +reactBtn.dataset.si : +reactBtn.dataset.mi;
+      reactTarget = { owner: owner, idx: idx, study: isStudy };
+      const theirName = owner === "jess" ? "Jess" : "Robi";
+      document.getElementById("react-kicker").textContent =
+        "React to " + theirName + (isStudy ? "'s study" : "'s meal");
       document.getElementById("react-modal").classList.add("open");
       return;
     }
@@ -761,7 +770,11 @@ function bind(){
     }
     const opt = e.target.closest(".react-option");
     if (opt && reactTarget) {
-      state = engine.reactToMeal(state, actor, reactTarget.owner, reactTarget.mi, opt.dataset.emoji);
+      if (reactTarget.study) {
+        state = engine.reactToStudy(state, actor, reactTarget.owner, reactTarget.idx, opt.dataset.emoji);
+      } else {
+        state = engine.reactToMeal(state, actor, reactTarget.owner, reactTarget.idx, opt.dataset.emoji);
+      }
       commit();
       this.classList.remove("open");
     }

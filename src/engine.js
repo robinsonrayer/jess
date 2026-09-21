@@ -109,14 +109,15 @@ export function createEngine(){
           photo: p.mealPhoto || ""
         });
       }
-      var studies = Array.isArray(p.studies) ? p.studies.map(function(m){ return { ...m, photo: m.photo || "" }; }) : [];
+      var studies = Array.isArray(p.studies) ? p.studies.map(function(m){ return { ...m, photo: m.photo || "", reaction: m.reaction || null }; }) : [];
       if (p.study !== null && p.study !== undefined) {
         studies.push({
           day: p.study,
           type: "pomodoro",
           difficulty: null,
           label: p.studyLabel || "",
-          photo: ""
+          photo: "",
+          reaction: null
         });
       }
       s.profiles[k] = {
@@ -204,6 +205,16 @@ export function createEngine(){
       return s;
     },
 
+    reactToStudy: function(s, actor, owner, si, emoji){
+      if (actor === owner) return s;
+      var studies = s.profiles[owner].studies;
+      if (si < 0 || si >= studies.length) return s;
+      s = clone(s);
+      s.profiles[owner].studies[si].reaction = emoji;
+      feed(s, name(actor) + " reacted " + emoji + " to " + name(owner) + "'s study.");
+      return s;
+    },
+
     studyAction: function(s, actor, type, difficulty, label, photo){
       s = clone(s);
       var p = s.profiles[actor];
@@ -217,7 +228,8 @@ export function createEngine(){
         type: type,
         difficulty: type === "problem" ? difficulty : null,
         label: label !== undefined ? label : "",
-        photo: photo !== undefined ? photo : ""
+        photo: photo !== undefined ? photo : "",
+        reaction: null
       });
       if (type === "problem") {
         p.difficultyMix[difficulty === "Easy" ? 0 : difficulty === "Medium" ? 1 : 2]++;
