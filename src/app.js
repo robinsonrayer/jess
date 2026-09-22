@@ -17,6 +17,11 @@ let partnerBurstSeen = {};
 
 const SESSION_KEY = "two-to-one.session.v1";
 
+const PENANCE_PASSAGES = {
+  jess: ["John 2", "John 14", "John 17"],
+  robi: ["Matthew 28"]
+};
+
 function show(id){
   document.querySelectorAll(".screen").forEach(function(el){ el.classList.remove("active"); });
   document.getElementById(id).classList.add("active");
@@ -315,6 +320,15 @@ function renderLogZone(){
       block += "</details>";
     }
   }
+
+  block += "<div class='panel penance'><div class='panel-head'><h3>Penance</h3></div>" +
+    "<p class='rubric'>memorize a passage once — 100 pts each</p><div class='penance-row'>";
+  PENANCE_PASSAGES[actor].forEach(function(passage){
+    const done = p.memorized.indexOf(passage) !== -1;
+    block += "<span class='act-btn" + (done ? " dead" : "") + "' data-passage='" + passage + "'>" +
+      passage + (done ? " ✓" : "") + "</span>";
+  });
+  block += "</div></div>";
 
   block += "<div class='panel prayer'><div class='panel-head'><h3>Prayer</h3></div>" +
     "<div class='prayer-row'><span class='act-btn' id='pray-btn'>Have we prayed together</span>" +
@@ -725,6 +739,13 @@ function bind(){
       state = engine.studyAction(state, actor, "pomodoro", null, labelVal(), studyPhoto || undefined);
       studyPhoto = null;
       commit();
+    }
+    if (t.dataset.passage) {
+      if (confirm("Have you memorized " + t.dataset.passage + "?")) {
+        state = engine.memorize(state, actor, t.dataset.passage);
+        commit();
+      }
+      return;
     }
     if (t.dataset.rating) {
       state = engine.logMeal(state, actor, t.dataset.rating, noteVal(), mealPhoto || undefined);

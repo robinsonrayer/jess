@@ -280,6 +280,7 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 .panel .panel-head h3 { font-size: 19px; color: var(--violet); font-weight: 500; margin-bottom: 10px; }
 .panel.prayer { border-left: 4px solid var(--gold); }
 .panel.fasting { border-left: 4px solid var(--blue); }
+.panel.penance { border-left: 4px solid var(--green); }
 
 .rubric {
   font-size: 15px;
@@ -330,7 +331,7 @@ h2 { font-size: 30px; font-weight: 500; color: var(--violet); margin-bottom: 4px
 .difficulty.medium { border-color: var(--gold); color: var(--gold); }
 .difficulty.hard { border-color: var(--pink); color: var(--pink); }
 
-.rating-row, .prayer-row, .study-row, .meal-photo-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.rating-row, .prayer-row, .study-row, .meal-photo-row, .penance-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .rating-row .rating, .rating-row .difficulty { flex: 1; }
 
 .prayed-chip {

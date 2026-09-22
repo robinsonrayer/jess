@@ -34,10 +34,10 @@ export function createEngine(){
       profiles: {
         jess: { points:0, meals:[],
                 studies:[], prayer:null, fast:null,
-                difficultyMix:[0,0,0] },
+                memorized:[], difficultyMix:[0,0,0] },
         robi: { points:0, meals:[],
                 studies:[], prayer:null, fast:null,
-                difficultyMix:[0,0,0] }
+                memorized:[], difficultyMix:[0,0,0] }
       },
       streaks: {
         health: { count:0, bank:0, last:null },
@@ -57,8 +57,8 @@ export function createEngine(){
     return {
       ...s,
       profiles: {
-        jess: { ...s.profiles.jess, meals: s.profiles.jess.meals.map(function(m){ return { ...m }; }), studies: s.profiles.jess.studies.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.jess.difficultyMix.slice() },
-        robi: { ...s.profiles.robi, meals: s.profiles.robi.meals.map(function(m){ return { ...m }; }), studies: s.profiles.robi.studies.map(function(m){ return { ...m }; }), difficultyMix: s.profiles.robi.difficultyMix.slice() }
+        jess: { ...s.profiles.jess, meals: s.profiles.jess.meals.map(function(m){ return { ...m }; }), studies: s.profiles.jess.studies.map(function(m){ return { ...m }; }), memorized: s.profiles.jess.memorized.slice(), difficultyMix: s.profiles.jess.difficultyMix.slice() },
+        robi: { ...s.profiles.robi, meals: s.profiles.robi.meals.map(function(m){ return { ...m }; }), studies: s.profiles.robi.studies.map(function(m){ return { ...m }; }), memorized: s.profiles.robi.memorized.slice(), difficultyMix: s.profiles.robi.difficultyMix.slice() }
       },
       streaks: {
         health:  { ...s.streaks.health },
@@ -125,6 +125,7 @@ export function createEngine(){
         ...p,
         meals: meals,
         studies: studies,
+        memorized: Array.isArray(p.memorized) ? p.memorized : [],
         difficultyMix: (p.difficultyMix && p.difficultyMix.length === 3) ? p.difficultyMix : [0,0,0]
       };
       delete s.profiles[k].meal;
@@ -283,6 +284,16 @@ export function createEngine(){
       p.fast = s.day;
       p.points += 20;
       feed(s, name(actor) + " kept the fast · +20 pts.");
+      return s;
+    },
+
+    memorize: function(s, actor, passage){
+      s = clone(s);
+      var p = s.profiles[actor];
+      if (p.memorized.indexOf(passage) !== -1) { return s; }
+      p.memorized.push(passage);
+      p.points += 100;
+      feed(s, name(actor) + " memorized " + passage + " · +100 pts.");
       return s;
     },
 

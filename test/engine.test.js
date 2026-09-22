@@ -28,7 +28,7 @@ test("fresh() seeds the full state shape", () => {
   assert.equal(s.day, 1);
   assert.equal(s.fasting, false);
   assert.deepEqual(Object.keys(s.profiles).sort(), ["jess", "robi"]);
-  for (const k of ["points", "meals", "studies", "prayer", "fast", "difficultyMix"]) {
+  for (const k of ["points", "meals", "studies", "prayer", "fast", "memorized", "difficultyMix"]) {
     assert.ok(k in s.profiles.jess, "jess has " + k);
     assert.ok(k in s.profiles.robi, "robi has " + k);
   }
@@ -620,6 +620,49 @@ test("study entries carry a reaction field, backfilled by normalize", () => {
   assert.equal(n.profiles.jess.studies[0].reaction, null);
 });
 
+/* ----- Penance memorization ----- */
+
+test("memorize awards 100 points once and posts feed", () => {
+  const e = createEngine();
+  let s = e.fresh();
+  s = e.memorize(s, "jess", "John 2");
+  assert.equal(s.profiles.jess.points, 100);
+  assert.deepEqual(s.profiles.jess.memorized, ["John 2"]);
+  assert.ok(s.feed.some(l => l.includes("Jess memorized John 2")));
+});
+
+test("memorize is one-time: second press is a no-op", () => {
+  const e = createEngine();
+  let s = e.fresh();
+  s = e.memorize(s, "jess", "John 2");
+  const feedLen = s.feed.length;
+  s = e.memorize(s, "jess", "John 2");
+  assert.equal(s.profiles.jess.points, 100);
+  assert.deepEqual(s.profiles.jess.memorized, ["John 2"]);
+  assert.equal(s.feed.length, feedLen, "no feed line on repeat");
+});
+
+test("memorize tracks separate passages per profile", () => {
+  const e = createEngine();
+  let s = e.fresh();
+  s = e.memorize(s, "jess", "John 14");
+  s = e.memorize(s, "robi", "Matthew 28");
+  assert.deepEqual(s.profiles.jess.memorized, ["John 14"]);
+  assert.deepEqual(s.profiles.robi.memorized, ["Matthew 28"]);
+  assert.equal(s.profiles.jess.points, 100);
+  assert.equal(s.profiles.robi.points, 100);
+});
+
+test("normalize backfills memorized on a legacy state", () => {
+  const e = createEngine();
+  const legacy = { day: 1, startedAt: "2026-09-10", fasting: false,
+    profiles: { jess: { points: 3 }, robi: { points: 4, memorized: ["Matthew 28"] } },
+    streaks: {}, rewards: [], feed: [] };
+  const n = e.normalize(legacy);
+  assert.deepEqual(n.profiles.jess.memorized, []);
+  assert.deepEqual(n.profiles.robi.memorized, ["Matthew 28"]);
+});
+
 /* ----- Immutability ----- */
 
 test("actions never mutate the input state", () => {
@@ -634,7 +677,8 @@ test("actions never mutate the input state", () => {
     s => e.renameReward(s, "r1", "y"),
     s => e.removeReward(s, "r1"),
     s => e.reactToMeal(e.logMeal(s, "jess", "Good"), "robi", "jess", 0, "😍"),
-    s => e.reactToStudy(e.studyAction(s, "robi", "problem", "Hard", "x"), "jess", "robi", 0, "🔥")
+    s => e.reactToStudy(e.studyAction(s, "robi", "problem", "Hard", "x"), "jess", "robi", 0, "🔥"),
+    s => e.memorize(s, "jess", "John 2")
   ];
   for (const fn of cases) {
     const before = e.fresh();
